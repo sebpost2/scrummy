@@ -1,12 +1,10 @@
 import { describe, it, expect, afterEach, afterAll, vi } from "vitest";
 
 import { prisma } from "@/lib/db/prisma";
-
 vi.mock("@/lib/auth/session", async () => {
   const actual = await vi.importActual<typeof import("@/lib/auth/session")>("@/lib/auth/session");
   return { ...actual, createSession: vi.fn().mockResolvedValue(undefined) };
 });
-
 import { createAccount } from "@/app/signup/actions";
 
 let createdEmail: string | undefined;

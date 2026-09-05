@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { Nav } from "@/app/_components/Nav";
 import { requireUser } from "@/lib/auth/session";
 import { getProjectMembership } from "@/lib/projects/mutations";
 import { getTaskWithEvents } from "@/lib/tasks/queries";
@@ -25,11 +26,13 @@ export default async function TaskDetailPage({
 
   return (
     <main className="container">
+      <Nav />
       <h1>{detail.title}</h1>
       {detail.description && <p>{detail.description}</p>}
       <TaskControls
         task={{
           id: detail.id,
+          status: detail.status,
           assigneeId: detail.assigneeId,
           priority: detail.priority,
           dueDate: detail.dueDate,

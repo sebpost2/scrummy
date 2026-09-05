@@ -1,14 +1,20 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import type { TaskPriority } from "@prisma/client";
+import type { TaskPriority, TaskStatus } from "@prisma/client";
 
 import { requireUser } from "@/lib/auth/session";
-import { reassignTask, updateTaskPriority, updateTaskDueDate, updateTaskLabels, addTaskComment } from "@/lib/tasks/mutations";
+import { reassignTask, updateTaskStatus, updateTaskPriority, updateTaskDueDate, updateTaskLabels, addTaskComment } from "@/lib/tasks/mutations";
 
 export async function reassignTaskAction(taskId: string, slug: string, assigneeId: string): Promise<void> {
   const user = await requireUser();
   await reassignTask(user.id, taskId, assigneeId || null);
+  revalidatePath(`/projects/${slug}/tasks/${taskId}`);
+}
+
+export async function updateStatusAction(taskId: string, slug: string, status: TaskStatus): Promise<void> {
+  const user = await requireUser();
+  await updateTaskStatus(user.id, taskId, status);
   revalidatePath(`/projects/${slug}/tasks/${taskId}`);
 }
 

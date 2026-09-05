@@ -2,7 +2,7 @@
 
 import type { Task } from "@prisma/client";
 
-import { reassignTaskAction, updatePriorityAction, updateDueDateAction, updateLabelsAction } from "./actions";
+import { reassignTaskAction, updateStatusAction, updatePriorityAction, updateDueDateAction, updateLabelsAction } from "./actions";
 
 export function TaskControls({
   task,
@@ -11,6 +11,7 @@ export function TaskControls({
 }: {
   task: {
     id: string;
+    status: Task["status"];
     assigneeId: string | null;
     priority: Task["priority"];
     dueDate: Date | null;
@@ -21,6 +22,15 @@ export function TaskControls({
 }) {
   return (
     <div className="filter-bar">
+      <select
+        className="input"
+        defaultValue={task.status}
+        onChange={(e) => updateStatusAction(task.id, slug, e.target.value as Task["status"])}
+      >
+        <option value="TODO">To do</option>
+        <option value="IN_PROGRESS">In progress</option>
+        <option value="DONE">Done</option>
+      </select>
       <select
         className="input"
         defaultValue={task.assigneeId ?? ""}

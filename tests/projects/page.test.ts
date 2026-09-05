@@ -3,14 +3,11 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { prisma } from "@/lib/db/prisma";
 import { createProject } from "@/lib/projects/mutations";
-
 let userId: string | undefined;
-
 vi.mock("@/lib/auth/session", async () => {
   const actual = await vi.importActual<typeof import("@/lib/auth/session")>("@/lib/auth/session");
   return { ...actual, requireUser: vi.fn(async () => ({ id: userId })) };
 });
-
 import ProjectsPage from "@/app/projects/page";
 
 afterEach(async () => {

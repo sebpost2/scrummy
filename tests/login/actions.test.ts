@@ -2,12 +2,10 @@ import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from "vites
 
 import { prisma } from "@/lib/db/prisma";
 import { hashPassword } from "@/lib/crypto/password";
-
 vi.mock("@/lib/auth/session", async () => {
   const actual = await vi.importActual<typeof import("@/lib/auth/session")>("@/lib/auth/session");
   return { ...actual, createSession: vi.fn().mockResolvedValue(undefined) };
 });
-
 import { login } from "@/app/login/actions";
 
 let userId: string | undefined;

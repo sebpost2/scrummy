@@ -4,15 +4,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { prisma } from "@/lib/db/prisma";
 import { createProject } from "@/lib/projects/mutations";
 import { createTask, updateTaskPriority, addTaskComment } from "@/lib/tasks/mutations";
-
 let userId: string | undefined;
 let projectId: string | undefined;
-
 vi.mock("@/lib/auth/session", async () => {
   const actual = await vi.importActual<typeof import("@/lib/auth/session")>("@/lib/auth/session");
   return { ...actual, requireUser: vi.fn(async () => ({ id: userId })) };
 });
-
 import TaskDetailPage from "@/app/projects/[slug]/tasks/[id]/page";
 
 afterEach(async () => {

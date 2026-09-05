@@ -4,17 +4,14 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { prisma } from "@/lib/db/prisma";
 import { createProject } from "@/lib/projects/mutations";
 import { createTask } from "@/lib/tasks/mutations";
-
 let userId: string | undefined;
 let outsiderId: string | undefined;
 let ownerId: string | undefined;
 let projectId: string | undefined;
-
 vi.mock("@/lib/auth/session", async () => {
   const actual = await vi.importActual<typeof import("@/lib/auth/session")>("@/lib/auth/session");
   return { ...actual, requireUser: vi.fn(async () => ({ id: userId })) };
 });
-
 import BoardPage from "@/app/projects/[slug]/page";
 
 afterEach(async () => {
@@ -58,11 +55,9 @@ describe("BoardPage", () => {
     });
     outsiderId = outsider.id;
     userId = outsider.id;
+    ownerId = owner.id;
     const project = await createProject(owner.id, "Private Project");
     projectId = project.id;
-    ownerId_cleanup: {
-      await prisma.user.deleteMany({ where: { id: owner.id, NOT: { id: owner.id } } }); // no-op guard, owner cleaned below
-    }
 
     let notFound: unknown;
     try {
@@ -71,8 +66,5 @@ describe("BoardPage", () => {
       notFound = err;
     }
     expect((notFound as { digest?: string } | undefined)?.digest).toMatch(/NEXT_NOT_FOUND/);
-
-    await prisma.project.deleteMany({ where: { id: project.id } });
-    await prisma.user.deleteMany({ where: { id: owner.id } });
   });
 });
