@@ -601,6 +601,24 @@ a.card:hover {
 }
 
 /* ============================================================
+   Avatar
+   ============================================================ */
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  border-radius: 999px;
+  background: var(--avatar-bg, var(--surface-active));
+  color: #fff;
+  font-weight: 600;
+  line-height: 1;
+  user-select: none;
+}
+.avatar--sm { width: 18px; height: 18px; font-size: 0.5625rem; }
+.avatar--md { width: 24px; height: 24px; font-size: 0.6875rem; }
+
+/* ============================================================
    Panel (task controls, description)
    ============================================================ */
 .panel {
