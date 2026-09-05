@@ -967,6 +967,37 @@ a.card:hover {
 }
 
 /* ============================================================
+   Menu dropdown
+   ============================================================ */
+.menu { position: relative; display: inline-flex; }
+.menu__trigger {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  padding: 6px 8px; font: inherit; font-size: var(--text-sm);
+  color: var(--text); background: none; border: 1px solid transparent;
+  border-radius: var(--radius-control); cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
+}
+.menu__trigger:hover { background: var(--surface-hover); }
+.menu__panel {
+  position: absolute; top: calc(100% + 6px); z-index: 40; min-width: 200px;
+  padding: 4px; background: var(--bg-elevated); border: 1px solid var(--border);
+  border-radius: var(--radius-card); box-shadow: var(--shadow-lg);
+  animation: menu-in var(--dur-fast) var(--ease);
+}
+.menu__panel--end { right: 0; }
+.menu__panel--start { left: 0; }
+.menu__item {
+  display: flex; align-items: center; gap: var(--space-2); width: 100%;
+  padding: 7px 8px; font: inherit; font-size: var(--text-sm); text-align: left;
+  color: var(--text); background: none; border: 0; border-radius: 5px; cursor: pointer;
+}
+.menu__item:hover { background: var(--surface-hover); color: var(--text); }
+.menu__item--danger { color: var(--danger); }
+.menu__sep { height: 1px; margin: 4px 0; background: var(--border-subtle); }
+@keyframes menu-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .menu__panel { animation: none; } }
+
+/* ============================================================
    Responsive
    ============================================================ */
 @media (max-width: 860px) {
