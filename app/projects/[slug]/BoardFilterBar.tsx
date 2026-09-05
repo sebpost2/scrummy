@@ -1,9 +1,8 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import type { User } from "@prisma/client";
 
-export function BoardFilterBar({ members }: { members: User[] }) {
+export function BoardFilterBar({ members }: { members: { id: string; name: string }[] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 

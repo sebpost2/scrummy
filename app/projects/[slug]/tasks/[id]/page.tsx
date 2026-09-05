@@ -27,7 +27,17 @@ export default async function TaskDetailPage({
     <main className="container">
       <h1>{detail.title}</h1>
       {detail.description && <p>{detail.description}</p>}
-      <TaskControls task={detail} slug={slug} members={detail.project.members.map((m) => m.user)} />
+      <TaskControls
+        task={{
+          id: detail.id,
+          assigneeId: detail.assigneeId,
+          priority: detail.priority,
+          dueDate: detail.dueDate,
+          labels: detail.labels,
+        }}
+        slug={slug}
+        members={detail.project.members.map((m) => ({ id: m.user.id, name: m.user.name }))}
+      />
       <h2>Activity</h2>
       <ul className="timeline">
         {detail.events.map((event) => (

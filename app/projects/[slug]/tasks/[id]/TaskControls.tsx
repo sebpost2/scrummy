@@ -1,6 +1,6 @@
 "use client";
 
-import type { Task, User } from "@prisma/client";
+import type { Task } from "@prisma/client";
 
 import { reassignTaskAction, updatePriorityAction, updateDueDateAction, updateLabelsAction } from "./actions";
 
@@ -9,9 +9,15 @@ export function TaskControls({
   slug,
   members,
 }: {
-  task: Task;
+  task: {
+    id: string;
+    assigneeId: string | null;
+    priority: Task["priority"];
+    dueDate: Date | null;
+    labels: string[];
+  };
   slug: string;
-  members: User[];
+  members: { id: string; name: string }[];
 }) {
   return (
     <div className="filter-bar">

@@ -44,7 +44,7 @@ export default async function BoardPage({
   return (
     <main className="container">
       <h1>{project.name}</h1>
-      <BoardFilterBar members={members.map((m) => m.user)} />
+      <BoardFilterBar members={members.map((m) => ({ id: m.user.id, name: m.user.name }))} />
       <NewTaskForm slug={slug} />
       <div className="board">
         {COLUMNS.map((col) => (
