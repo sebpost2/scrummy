@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import type { TaskPriority, TaskStatus } from "@prisma/client";
 
 import { Nav } from "@/app/_components/Nav";
+import { PageHeader } from "@/app/_components/PageHeader";
+import { TaskCard } from "@/app/_components/TaskCard";
 import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { getProjectMembership } from "@/lib/projects/mutations";
@@ -43,35 +44,47 @@ export default async function BoardPage({
   const members = await prisma.projectMember.findMany({ where: { projectId: project.id }, include: { user: true } });
 
   return (
-    <main className="container">
+    <>
       <Nav />
-      <h1>{project.name}</h1>
-      <BoardFilterBar members={members.map((m) => ({ id: m.user.id, name: m.user.name }))} />
-      <NewTaskForm slug={slug} />
-      <div className="board">
-        {COLUMNS.map((col) => (
-          <section key={col.status} className="board__column">
-            <h2>{col.label}</h2>
-            {tasks
-              .filter((t) => t.status === col.status)
-              .map((task) => (
-                <Link key={task.id} href={`/projects/${slug}/tasks/${task.id}`} className="card">
-                  <div className="card__title">{task.title}</div>
-                  <div className="card__meta">
-                    <span className="badge">{task.priority}</span>
-                    {task.assignee && <span className="badge">{task.assignee.name}</span>}
-                    {task.dueDate && <span className="badge">{task.dueDate.toISOString().slice(0, 10)}</span>}
-                    {task.labels.map((label) => (
-                      <span key={label} className="badge">
-                        {label}
-                      </span>
-                    ))}
+      <main className="container">
+        <div className="stack">
+          <PageHeader
+            title={project.name}
+            subtitle={`${tasks.length} ${tasks.length === 1 ? "task" : "tasks"}`}
+          />
+          <NewTaskForm slug={slug} />
+          <BoardFilterBar members={members.map((m) => ({ id: m.user.id, name: m.user.name }))} />
+
+          <div className="board">
+            {COLUMNS.map((col) => {
+              const columnTasks = tasks.filter((t) => t.status === col.status);
+              return (
+                <section key={col.status} className="board__column">
+                  <div className="board__column-head">
+                    <h2>{col.label}</h2>
+                    <span className="count">{columnTasks.length}</span>
                   </div>
-                </Link>
-              ))}
-          </section>
-        ))}
-      </div>
-    </main>
+                  {columnTasks.length === 0 ? (
+                    <p className="board__empty">Nothing here</p>
+                  ) : (
+                    columnTasks.map((task) => (
+                      <TaskCard
+                        key={task.id}
+                        href={`/projects/${slug}/tasks/${task.id}`}
+                        title={task.title}
+                        priority={task.priority}
+                        assigneeName={task.assignee?.name}
+                        dueDate={task.dueDate}
+                        labels={task.labels}
+                      />
+                    ))
+                  )}
+                </section>
+              );
+            })}
+          </div>
+        </div>
+      </main>
+    </>
   );
 }

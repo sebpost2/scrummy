@@ -39,7 +39,7 @@ describe("TaskDetailPage", () => {
     });
     const html = renderToStaticMarkup(element);
 
-    const priorityChangeIndex = html.indexOf("PRIORITY_CHANGED");
+    const priorityChangeIndex = html.indexOf("changed the priority");
     const commentIndex = html.indexOf("Looks good");
     expect(html).toContain("Review the PR");
     expect(priorityChangeIndex).toBeGreaterThan(-1);

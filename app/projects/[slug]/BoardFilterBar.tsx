@@ -14,7 +14,7 @@ export function BoardFilterBar({ members }: { members: { id: string; name: strin
   }
 
   return (
-    <div className="filter-bar">
+    <div className="controls">
       <select
         className="input"
         defaultValue={searchParams.get("assignee") ?? ""}

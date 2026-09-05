@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { Nav } from "@/app/_components/Nav";
+import { PageHeader } from "@/app/_components/PageHeader";
 import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { getProjectMembership } from "@/lib/projects/mutations";
@@ -20,17 +21,38 @@ export default async function MembersPage({ params }: { params: Promise<{ slug: 
   const members = await prisma.projectMember.findMany({ where: { projectId: project.id }, include: { user: true } });
 
   return (
-    <main className="container">
+    <>
       <Nav />
-      <h1>{project.name} — Members</h1>
-      <ul>
-        {members.map((m) => (
-          <li key={m.userId}>
-            {m.user.name} ({m.user.email}) — {m.role}
-          </li>
-        ))}
-      </ul>
-      <AddMemberForm slug={slug} />
-    </main>
+      <main className="container">
+        <div className="stack">
+          <PageHeader
+            title="Members"
+            subtitle={project.name}
+            actions={
+              <a className="button button--secondary" href={`/projects/${slug}`}>
+                Back to board
+              </a>
+            }
+          />
+
+          <ul className="member-list">
+            {members.map((m) => (
+              <li key={m.userId}>
+                <span>{m.user.name}</span>
+                <span className={`badge${m.role === "OWNER" ? " badge--status-in_progress" : ""}`}>
+                  {m.role === "OWNER" ? "Owner" : "Member"}
+                </span>
+                <span className="member-list__email">{m.user.email}</span>
+              </li>
+            ))}
+          </ul>
+
+          <section className="stack">
+            <h2>Add a member</h2>
+            <AddMemberForm slug={slug} />
+          </section>
+        </div>
+      </main>
+    </>
   );
 }

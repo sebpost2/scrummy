@@ -49,6 +49,6 @@ describe("MyTasksPage", () => {
     const element = await MyTasksPage();
     const html = renderToStaticMarkup(element);
 
-    expect(html).toContain("nothing assigned");
+    expect(html).toContain("Nothing assigned");
   });
 });

@@ -1,6 +1,8 @@
 import Link from "next/link";
 
 import { Nav } from "@/app/_components/Nav";
+import { PageHeader } from "@/app/_components/PageHeader";
+import { EmptyState } from "@/app/_components/EmptyState";
 import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 
@@ -16,22 +18,34 @@ export default async function ProjectsPage() {
   });
 
   return (
-    <main className="container">
+    <>
       <Nav />
-      <h1>Your projects</h1>
-      {memberships.length === 0 ? (
-        <p>You have no projects yet.</p>
-      ) : (
-        <ul>
-          {memberships.map((m) => (
-            <li key={m.projectId}>
-              <Link href={`/projects/${m.project.slug}`}>{m.project.name}</Link>
-            </li>
-          ))}
-        </ul>
-      )}
-      <h2>Create a project</h2>
-      <NewProjectForm />
-    </main>
+      <main className="container">
+        <div className="stack">
+          <PageHeader title="Your projects" subtitle="Boards you own or belong to." />
+
+          {memberships.length === 0 ? (
+            <EmptyState
+              title="No projects yet"
+              body="Create your first project below to start tracking work on a board."
+            />
+          ) : (
+            <div className="project-grid">
+              {memberships.map((m) => (
+                <Link key={m.projectId} href={`/projects/${m.project.slug}`} className="project-card">
+                  <span className="project-card__name">{m.project.name}</span>
+                  <span className="project-card__go">Open board</span>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          <section className="stack">
+            <h2>Create a project</h2>
+            <NewProjectForm />
+          </section>
+        </div>
+      </main>
+    </>
   );
 }

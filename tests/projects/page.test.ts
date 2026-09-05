@@ -45,6 +45,6 @@ describe("ProjectsPage", () => {
     const element = await ProjectsPage();
     const html = renderToStaticMarkup(element);
 
-    expect(html).toContain("no projects");
+    expect(html).toContain("No projects yet");
   });
 });

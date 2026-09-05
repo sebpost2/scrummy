@@ -21,7 +21,7 @@ export function TaskControls({
   members: { id: string; name: string }[];
 }) {
   return (
-    <div className="filter-bar">
+    <div className="controls">
       <select
         className="input"
         defaultValue={task.status}

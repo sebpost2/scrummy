@@ -1,22 +1,13 @@
-import Link from "next/link";
-
 import { Nav } from "@/app/_components/Nav";
+import { PageHeader } from "@/app/_components/PageHeader";
+import { EmptyState } from "@/app/_components/EmptyState";
+import { TaskCard } from "@/app/_components/TaskCard";
 import { requireUser } from "@/lib/auth/session";
 import { getMyTasks } from "@/lib/tasks/queries";
 
 export default async function MyTasksPage() {
   const user = await requireUser();
   const tasks = await getMyTasks(user.id);
-
-  if (tasks.length === 0) {
-    return (
-      <main className="container">
-        <Nav />
-        <h1>My tasks</h1>
-        <p>You have nothing assigned right now.</p>
-      </main>
-    );
-  }
 
   const byProject = new Map<string, { name: string; slug: string; tasks: typeof tasks }>();
   for (const task of tasks) {
@@ -26,24 +17,36 @@ export default async function MyTasksPage() {
   }
 
   return (
-    <main className="container">
+    <>
       <Nav />
-      <h1>My tasks</h1>
-      {[...byProject.values()].map((group) => (
-        <section key={group.slug}>
-          <h2>{group.name}</h2>
-          {group.tasks.map((task) => (
-            <Link key={task.id} href={`/projects/${group.slug}/tasks/${task.id}`} className="card">
-              <div className="card__title">{task.title}</div>
-              <div className="card__meta">
-                <span className="badge">{task.status}</span>
-                <span className="badge">{task.priority}</span>
-                {task.dueDate && <span className="badge">{task.dueDate.toISOString().slice(0, 10)}</span>}
-              </div>
-            </Link>
-          ))}
-        </section>
-      ))}
-    </main>
+      <main className="container">
+        <div className="stack">
+          <PageHeader title="My tasks" subtitle="Everything assigned to you, grouped by project." />
+
+          {tasks.length === 0 ? (
+            <EmptyState
+              title="Nothing assigned"
+              body="When a teammate assigns you a task, it shows up here."
+            />
+          ) : (
+            [...byProject.values()].map((group) => (
+              <section key={group.slug} className="stack">
+                <h2>{group.name}</h2>
+                {group.tasks.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    href={`/projects/${group.slug}/tasks/${task.id}`}
+                    title={task.title}
+                    priority={task.priority}
+                    status={task.status}
+                    dueDate={task.dueDate}
+                  />
+                ))}
+              </section>
+            ))
+          )}
+        </div>
+      </main>
+    </>
   );
 }
