@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { Nav } from "@/app/_components/Nav";
 import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 
@@ -16,6 +17,7 @@ export default async function ProjectsPage() {
 
   return (
     <main className="container">
+      <Nav />
       <h1>Your projects</h1>
       {memberships.length === 0 ? (
         <p>You have no projects yet.</p>

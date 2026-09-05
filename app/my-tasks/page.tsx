@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { Nav } from "@/app/_components/Nav";
 import { requireUser } from "@/lib/auth/session";
 import { getMyTasks } from "@/lib/tasks/queries";
 
@@ -10,6 +11,7 @@ export default async function MyTasksPage() {
   if (tasks.length === 0) {
     return (
       <main className="container">
+        <Nav />
         <h1>My tasks</h1>
         <p>You have nothing assigned right now.</p>
       </main>
@@ -25,6 +27,7 @@ export default async function MyTasksPage() {
 
   return (
     <main className="container">
+      <Nav />
       <h1>My tasks</h1>
       {[...byProject.values()].map((group) => (
         <section key={group.slug}>

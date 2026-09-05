@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { TaskPriority, TaskStatus } from "@prisma/client";
 
+import { Nav } from "@/app/_components/Nav";
 import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { getProjectMembership } from "@/lib/projects/mutations";
@@ -43,6 +44,7 @@ export default async function BoardPage({
 
   return (
     <main className="container">
+      <Nav />
       <h1>{project.name}</h1>
       <BoardFilterBar members={members.map((m) => ({ id: m.user.id, name: m.user.name }))} />
       <NewTaskForm slug={slug} />
