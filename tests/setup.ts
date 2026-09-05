@@ -28,3 +28,24 @@ if (!process.env.DATABASE_URL) {
 vi.mock("next/cache", () => ({
   revalidatePath: () => {},
 }));
+
+// Page components are invoked directly (no real request/router), and are
+// rendered with plain renderToStaticMarkup, so next/navigation APIs that
+// need request-scoped context throw or behave differently than in a real
+// app: useRouter needs an AppRouterContext (invariant otherwise), and the
+// installed Next version unified notFound()'s digest into
+// "NEXT_HTTP_ERROR_FALLBACK;404" instead of the older "NEXT_NOT_FOUND".
+// redirect() is left as the real implementation — it already works as-is.
+vi.mock("next/navigation", async () => {
+  const actual = await vi.importActual<typeof import("next/navigation")>("next/navigation");
+  return {
+    ...actual,
+    notFound: () => {
+      const error = new Error("NEXT_NOT_FOUND");
+      (error as unknown as { digest: string }).digest = "NEXT_NOT_FOUND";
+      throw error;
+    },
+    useRouter: () => ({ push: () => {}, replace: () => {}, back: () => {}, refresh: () => {} }),
+    useSearchParams: () => new URLSearchParams(),
+  };
+});
