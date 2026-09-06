@@ -37,6 +37,7 @@ model Project {
   id          String   @id @default(cuid())
   name        String
   slug        String   @unique
+  inviteToken String   @unique
   createdById String
   createdBy   User     @relation("ProjectCreator", fields: [createdById], references: [id])
   createdAt   DateTime @default(now())

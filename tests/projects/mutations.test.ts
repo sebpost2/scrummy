@@ -41,6 +41,18 @@ describe("createProject", () => {
     const membership = await getProjectMembership(owner.id, project.id);
     expect(membership?.role).toBe("OWNER");
   });
+
+  it("generates a unique invite token", async () => {
+    const owner = await prisma.user.create({
+      data: { email: `owner-invite-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
+    });
+    ownerId = owner.id;
+
+    const project = await createProject(owner.id, "Invite Token Project");
+    projectId = project.id;
+
+    expect(project.inviteToken).toMatch(/^[a-f0-9]{32}$/);
+  });
 });
 
 describe("addProjectMemberByEmail", () => {
