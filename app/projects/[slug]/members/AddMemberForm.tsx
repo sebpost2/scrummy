@@ -10,7 +10,7 @@ export function AddMemberForm({ slug }: { slug: string }) {
   const [state, formAction, pending] = useActionState(addMemberAction.bind(null, slug), initialState);
 
   return (
-    <form action={formAction} className="form">
+    <form action={formAction} className="project-create">
       <input type="email" name="email" placeholder="teammate@example.com" required className="input" />
       <button type="submit" className="button" disabled={pending}>
         {pending ? "Adding…" : "Add member"}

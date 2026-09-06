@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import Avatar from "@/app/_components/Avatar";
 import { Nav } from "@/app/_components/Nav";
 import { PageHeader } from "@/app/_components/PageHeader";
 import { requireUser } from "@/lib/auth/session";
@@ -46,12 +47,15 @@ export default async function MembersPage({ params }: { params: Promise<{ slug: 
 
           <ul className="member-list">
             {members.map((m) => (
-              <li key={m.userId}>
-                <span>{m.user.name}</span>
+              <li key={m.userId} className="member-list__item">
+                <Avatar name={m.user.name} size="md" />
+                <div className="member-list__id">
+                  <span className="member-list__name">{m.user.name}</span>
+                  <span className="member-list__email">{m.user.email}</span>
+                </div>
                 <span className={`badge${m.role === "OWNER" ? " badge--status-in_progress" : ""}`}>
                   {m.role === "OWNER" ? "Owner" : "Member"}
                 </span>
-                <span className="member-list__email">{m.user.email}</span>
               </li>
             ))}
           </ul>

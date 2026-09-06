@@ -908,32 +908,13 @@ textarea.input {
 /* ============================================================
    Member list
    ============================================================ */
-.member-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-panel);
-  overflow: hidden;
-}
-
-.member-list li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
-  background: var(--surface);
-}
-
-.member-list li + li {
-  border-top: 1px solid var(--border);
-}
-
-.member-list__email {
-  color: var(--text-subtle);
-  font-size: 0.8125rem;
-  margin-left: auto;
-}
+.member-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--border); border-radius: var(--radius-card); overflow: hidden; }
+.member-list__item { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); background: var(--surface); }
+.member-list__item + .member-list__item { border-top: 1px solid var(--border-subtle); }
+.member-list__id { display: flex; flex-direction: column; }
+.member-list__name { font-weight: 500; font-size: var(--text-base); }
+.member-list__email { color: var(--text-subtle); font-size: var(--text-xs); }
+.member-list__item .badge { margin-left: auto; }
 
 /* ============================================================
    Landing hero
