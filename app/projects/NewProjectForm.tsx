@@ -10,7 +10,7 @@ export function NewProjectForm() {
   const [state, formAction, pending] = useActionState(createProjectAction, initialState);
 
   return (
-    <form action={formAction} className="form">
+    <form action={formAction} className="project-create">
       <input type="text" name="name" placeholder="Project name" required className="input" />
       <button type="submit" className="button" disabled={pending}>
         {pending ? "Creating…" : "Create project"}

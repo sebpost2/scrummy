@@ -13,7 +13,9 @@ export default async function ProjectsPage() {
 
   const memberships = await prisma.projectMember.findMany({
     where: { userId: user.id },
-    include: { project: true },
+    include: {
+      project: { include: { _count: { select: { tasks: true } } } },
+    },
     orderBy: { project: { createdAt: "desc" } },
   });
 
@@ -37,16 +39,15 @@ export default async function ProjectsPage() {
               {memberships.map((m) => (
                 <Link key={m.projectId} href={`/projects/${m.project.slug}`} className="project-card">
                   <span className="project-card__name">{m.project.name}</span>
-                  <span className="project-card__go">Open board</span>
+                  <span className="project-card__meta">
+                    {m.project._count.tasks} {m.project._count.tasks === 1 ? "task" : "tasks"}
+                  </span>
                 </Link>
               ))}
             </div>
           )}
 
-          <section className="stack">
-            <h2>Create a project</h2>
-            <NewProjectForm />
-          </section>
+          <NewProjectForm />
         </div>
       </main>
     </>
