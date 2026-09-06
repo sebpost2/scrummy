@@ -581,6 +581,7 @@ textarea.input {
   border-radius: var(--radius-card);
   padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
   box-shadow: var(--shadow-sm);
+  cursor: grab;
   transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
 }
 
@@ -629,33 +630,6 @@ textarea.input {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.card__grip {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  padding: 2px;
-  color: var(--text-subtle);
-  background: none;
-  border: 0;
-  cursor: grab;
-  opacity: 0;
-  transition: opacity var(--dur-fast) var(--ease);
-}
-
-.card:hover .card__grip {
-  opacity: 1;
-}
-
-.card__grip:focus-visible {
-  opacity: 1;
-}
-
-@media (hover: none) {
-  .card__grip {
-    opacity: 1;
-  }
 }
 
 .card__meta {
@@ -714,8 +688,7 @@ textarea.input {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .card,
-  .card__grip {
+  .card {
     transition: none;
   }
 }

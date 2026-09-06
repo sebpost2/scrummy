@@ -75,6 +75,13 @@ export default async function BoardPage({
           <PageHeader
             title={project.name}
             subtitle={`${tasks.length} ${tasks.length === 1 ? "task" : "tasks"}`}
+            actions={
+              membership.role === "OWNER" ? (
+                <a className="button button--secondary" href={`/projects/${slug}/members`}>
+                  Members
+                </a>
+              ) : undefined
+            }
           />
           <BoardFilterBar members={members.map((m) => ({ id: m.user.id, name: m.user.name }))} />
 

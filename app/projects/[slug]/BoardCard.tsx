@@ -11,7 +11,7 @@ import type {
   DraggableSyntheticListeners,
 } from "@dnd-kit/core";
 import type { TaskStatus } from "@prisma/client";
-import { GripVertical, MoreHorizontal, ListChecks } from "lucide-react";
+import { MoreHorizontal, ListChecks } from "lucide-react";
 
 import Avatar from "@/app/_components/Avatar";
 import RelativeTime from "@/app/_components/RelativeTime";
@@ -103,24 +103,15 @@ function CardShell({
       ref={setNodeRef}
       style={style}
       className={`card card--${task.priority.toLowerCase()}${overlay ? " card--overlay" : ""}`}
+      {...attributes}
+      {...listeners}
     >
-      {overlay ? (
-        <span className="card__grip" aria-hidden="true">
-          <GripVertical size={14} />
-        </span>
-      ) : (
-        <button
-          type="button"
-          className="card__grip"
-          aria-label="Drag task"
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical size={14} />
-        </button>
-      )}
       {!overlay && members && onMove && (
-        <span className="card__menu">
+        <span
+          className="card__menu"
+          onPointerDown={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
           <CardMenu task={task} slug={slug} members={members} onMove={onMove} />
         </span>
       )}
