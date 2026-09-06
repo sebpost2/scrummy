@@ -96,6 +96,43 @@ describe("POST /api/sync", () => {
     expect(json.error).toBe("ASSIGNEE_NOT_A_MEMBER");
   });
 
+  it("parses a due-date string from the JSON wire format (not a Date instance)", async () => {
+    const owner = await prisma.user.create({
+      data: { email: `sync-owner4-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
+    });
+    ownerId = owner.id;
+    vi.mocked(getSessionUser).mockResolvedValue(owner);
+    const project = await createProject(owner.id, "Sync Project 4");
+    projectId = project.id;
+    const task = await createTask(owner.id, project.id, { title: "Sync task 4" });
+
+    const t0 = Date.now();
+    const setRes = await POST(
+      request({
+        id: `mut-set-${t0}`,
+        type: "updateTaskDueDate",
+        args: [task.id, "2026-06-01T00:00:00.000Z"],
+        clientTimestamp: t0,
+      }),
+    );
+    expect(setRes.status).toBe(200);
+    const afterSet = await prisma.task.findUnique({ where: { id: task.id } });
+    expect(afterSet?.dueDate?.toISOString()).toBe("2026-06-01T00:00:00.000Z");
+
+    const t1 = t0 + 1000;
+    const clearRes = await POST(
+      request({
+        id: `mut-clear-${t1}`,
+        type: "updateTaskDueDate",
+        args: [task.id, null],
+        clientTimestamp: t1,
+      }),
+    );
+    expect(clearRes.status).toBe(200);
+    const afterClear = await prisma.task.findUnique({ where: { id: task.id } });
+    expect(afterClear?.dueDate).toBeNull();
+  });
+
   it("returns 400 for an unknown mutation type", async () => {
     const owner = await prisma.user.create({
       data: { email: `sync-owner3-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },

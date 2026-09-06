@@ -45,7 +45,8 @@ export const MUTATION_REGISTRY: Record<OutboxMutationType, Handler> = {
   reassignTask: (userId, args, ts) => reassignTask(userId, args[0] as string, args[1] as string | null, ts),
   updateTaskStatus: (userId, args, ts) => updateTaskStatus(userId, args[0] as string, args[1] as TaskStatus, ts),
   updateTaskPriority: (userId, args, ts) => updateTaskPriority(userId, args[0] as string, args[1] as TaskPriority, ts),
-  updateTaskDueDate: (userId, args, ts) => updateTaskDueDate(userId, args[0] as string, args[1] as Date | null, ts),
+  updateTaskDueDate: (userId, args, ts) =>
+    updateTaskDueDate(userId, args[0] as string, args[1] ? new Date(args[1] as string) : null, ts),
   updateTaskLabels: (userId, args, ts) => updateTaskLabels(userId, args[0] as string, args[1] as string[], ts),
   reorderTask: (userId, args, ts) => reorderTask(userId, args[0] as string, args[1] as number, ts),
   addTaskComment: (userId, args) => addTaskComment(userId, args[0] as string, args[1] as string),
