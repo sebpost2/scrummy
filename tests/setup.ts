@@ -21,6 +21,10 @@ if (!process.env.DATABASE_URL) {
   }
 }
 
+// appOrigin() (via lib/auth/google.ts) reads APP_URL. Tests don't have a real
+// request, so ensure it's set to a valid value even in CI.
+process.env.APP_URL ??= "http://localhost:3000";
+
 // Server actions call revalidatePath, which requires Next's request-scoped
 // store. Tests invoke server actions directly (no real request), so this
 // throws an "Invariant: static generation store missing" error unless

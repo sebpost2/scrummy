@@ -11,8 +11,9 @@ export function InviteLinkCard({ slug, url }: { slug: string; url: string }) {
   const [pending, start] = useTransition();
 
   function copy() {
-    navigator.clipboard.writeText(link);
-    toast.success("Invite link copied");
+    navigator.clipboard.writeText(link)
+      .then(() => toast.success("Invite link copied"))
+      .catch(() => toast.error("Couldn't copy — select the link and copy it manually"));
   }
 
   function regenerate() {
