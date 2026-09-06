@@ -466,18 +466,18 @@ textarea.input {
 .board {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: var(--space-3);
+  align-items: start;
 }
 
 .board__column {
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-panel);
+  padding: var(--space-2);
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  background: var(--surface-sunken);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-panel);
-  padding: 12px;
-  min-height: 160px;
+  gap: var(--space-2);
 }
 
 .board__column-head {
@@ -490,6 +490,13 @@ textarea.input {
 .board__column-head h2 {
   font-size: 0.8125rem;
   color: var(--text-muted);
+}
+
+.board__column-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-height: 40px;
 }
 
 .count {
@@ -512,15 +519,23 @@ textarea.input {
    Task card
    ============================================================ */
 .card {
-  display: block;
   position: relative;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
-  padding: 11px 12px 11px 15px;
-  color: inherit;
-  box-shadow: var(--shadow-raised);
-  transition: transform 0.12s, border-color 0.12s;
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+
+.card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-md);
+}
+
+.card--overlay {
+  box-shadow: var(--shadow-lg);
+  cursor: grabbing;
 }
 
 .card::before {
@@ -546,22 +561,92 @@ textarea.input {
   background: var(--prio-low);
 }
 
-a.card:hover {
-  transform: translateY(-1px);
-  border-color: var(--border-strong);
+.card__link {
   color: inherit;
+  display: block;
 }
 
 .card__title {
   font-weight: 500;
-  margin-bottom: 6px;
+  font-size: var(--text-base);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card__grip {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 2px;
+  color: var(--text-subtle);
+  background: none;
+  border: 0;
+  cursor: grab;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+
+.card:hover .card__grip {
+  opacity: 1;
 }
 
 .card__meta {
   display: flex;
-  gap: 5px;
-  flex-wrap: wrap;
   align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+  margin-top: var(--space-2);
+}
+
+.card__due {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-subtle);
+}
+
+.card__due--overdue {
+  color: var(--danger);
+}
+
+/* ============================================================
+   Inline task composer
+   ============================================================ */
+.composer {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.composer .input {
+  flex: 1;
+}
+
+.composer__open {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 6px 8px;
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  background: none;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  width: 100%;
+}
+
+.composer__open:hover {
+  color: var(--text);
+  background: var(--surface);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .card__grip {
+    transition: none;
+  }
 }
 
 /* ============================================================

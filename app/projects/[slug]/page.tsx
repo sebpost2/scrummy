@@ -10,7 +10,6 @@ import { getProjectMembership } from "@/lib/projects/mutations";
 import { getBoardTasks, type BoardFilters } from "@/lib/tasks/queries";
 
 import { BoardFilterBar } from "./BoardFilterBar";
-import { NewTaskForm } from "./NewTaskForm";
 
 const COLUMNS: { status: TaskStatus; label: string }[] = [
   { status: "TODO", label: "To do" },
@@ -61,7 +60,6 @@ export default async function BoardPage({
             title={project.name}
             subtitle={`${tasks.length} ${tasks.length === 1 ? "task" : "tasks"}`}
           />
-          <NewTaskForm slug={slug} />
           <BoardFilterBar members={members.map((m) => ({ id: m.user.id, name: m.user.name }))} />
 
           <div className="board">
