@@ -19,7 +19,10 @@ export default async function ProjectsPage() {
 
   return (
     <>
-      <Nav />
+      <Nav
+        user={{ name: user.name, email: user.email }}
+        projects={memberships.map((m) => ({ name: m.project.name, slug: m.project.slug }))}
+      />
       <main className="container">
         <div className="stack">
           <PageHeader title="Your projects" subtitle="Boards you own or belong to." />

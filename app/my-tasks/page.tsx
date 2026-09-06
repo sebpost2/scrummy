@@ -3,11 +3,18 @@ import { PageHeader } from "@/app/_components/PageHeader";
 import { EmptyState } from "@/app/_components/EmptyState";
 import { TaskCard } from "@/app/_components/TaskCard";
 import { requireUser } from "@/lib/auth/session";
+import { prisma } from "@/lib/db/prisma";
 import { getMyTasks } from "@/lib/tasks/queries";
 
 export default async function MyTasksPage() {
   const user = await requireUser();
   const tasks = await getMyTasks(user.id);
+
+  const navProjects = await prisma.projectMember.findMany({
+    where: { userId: user.id },
+    include: { project: true },
+    orderBy: { project: { createdAt: "desc" } },
+  });
 
   const byProject = new Map<string, { name: string; slug: string; tasks: typeof tasks }>();
   for (const task of tasks) {
@@ -18,7 +25,10 @@ export default async function MyTasksPage() {
 
   return (
     <>
-      <Nav />
+      <Nav
+        user={{ name: user.name, email: user.email }}
+        projects={navProjects.map((m) => ({ name: m.project.name, slug: m.project.slug }))}
+      />
       <main className="container">
         <div className="stack">
           <PageHeader title="My tasks" subtitle="Everything assigned to you, grouped by project." />

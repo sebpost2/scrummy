@@ -19,10 +19,19 @@ export default async function MembersPage({ params }: { params: Promise<{ slug: 
   if (!membership || membership.role !== "OWNER") notFound();
 
   const members = await prisma.projectMember.findMany({ where: { projectId: project.id }, include: { user: true } });
+  const navProjects = await prisma.projectMember.findMany({
+    where: { userId: user.id },
+    include: { project: true },
+    orderBy: { project: { createdAt: "desc" } },
+  });
 
   return (
     <>
-      <Nav />
+      <Nav
+        user={{ name: user.name, email: user.email }}
+        projects={navProjects.map((m) => ({ name: m.project.name, slug: m.project.slug }))}
+        currentSlug={slug}
+      />
       <main className="container">
         <div className="stack">
           <PageHeader

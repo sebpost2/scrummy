@@ -1,40 +1,40 @@
-"use client";
-
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 
-import { logout } from "@/app/login/actions";
+import ProjectSwitcher from "./ProjectSwitcher";
+import UserMenu from "./UserMenu";
+import ThemeToggle from "./ThemeToggle";
 
 const LINKS = [
   { href: "/projects", label: "Projects" },
   { href: "/my-tasks", label: "My tasks" },
 ];
 
-export function Nav() {
-  const pathname = usePathname();
-
+export function Nav({
+  user,
+  projects = [],
+  currentSlug,
+}: {
+  user: { name: string; email: string };
+  projects?: { name: string; slug: string }[];
+  currentSlug?: string;
+}) {
   return (
     <nav className="nav">
       <Link href="/projects" className="nav__brand">
         <span className="nav__mark" aria-hidden="true" />
         scrummy
       </Link>
+      {projects.length > 0 && (
+        <ProjectSwitcher projects={projects} currentSlug={currentSlug} />
+      )}
       <div className="nav__links">
-        {LINKS.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className="nav__link"
-            aria-current={pathname?.startsWith(link.href) ? "page" : undefined}
-          >
-            {link.label}
+        {LINKS.map((l) => (
+          <Link key={l.href} href={l.href} className="nav__link">
+            {l.label}
           </Link>
         ))}
-        <form action={logout}>
-          <button type="submit" className="button button--link">
-            Log out
-          </button>
-        </form>
+        <ThemeToggle />
+        <UserMenu user={user} />
       </div>
     </nav>
   );

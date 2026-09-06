@@ -9,7 +9,10 @@ let projectId: string | undefined;
 let currentUserId: string | undefined;
 vi.mock("@/lib/auth/session", async () => {
   const actual = await vi.importActual<typeof import("@/lib/auth/session")>("@/lib/auth/session");
-  return { ...actual, requireUser: vi.fn(async () => ({ id: currentUserId })) };
+  return {
+    ...actual,
+    requireUser: vi.fn(async () => ({ id: currentUserId, name: "Ada", email: "nav@example.com" })),
+  };
 });
 import MembersPage from "@/app/projects/[slug]/members/page";
 

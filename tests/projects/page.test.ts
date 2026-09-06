@@ -6,7 +6,10 @@ import { createProject } from "@/lib/projects/mutations";
 let userId: string | undefined;
 vi.mock("@/lib/auth/session", async () => {
   const actual = await vi.importActual<typeof import("@/lib/auth/session")>("@/lib/auth/session");
-  return { ...actual, requireUser: vi.fn(async () => ({ id: userId })) };
+  return {
+    ...actual,
+    requireUser: vi.fn(async () => ({ id: userId, name: "Ada", email: "nav@example.com" })),
+  };
 });
 import ProjectsPage from "@/app/projects/page";
 

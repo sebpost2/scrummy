@@ -10,7 +10,10 @@ let ownerId: string | undefined;
 let projectId: string | undefined;
 vi.mock("@/lib/auth/session", async () => {
   const actual = await vi.importActual<typeof import("@/lib/auth/session")>("@/lib/auth/session");
-  return { ...actual, requireUser: vi.fn(async () => ({ id: userId })) };
+  return {
+    ...actual,
+    requireUser: vi.fn(async () => ({ id: userId, name: "Ada", email: "nav@example.com" })),
+  };
 });
 import BoardPage from "@/app/projects/[slug]/page";
 
