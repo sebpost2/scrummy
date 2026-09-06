@@ -5,9 +5,9 @@ import { LoginForm } from "./LoginForm";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; invite?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, invite } = await searchParams;
 
   return (
     <main className="container container--narrow">
@@ -17,7 +17,7 @@ export default async function LoginPage({
           scrummy
         </Link>
         <h1 className="auth__title">Log in</h1>
-        <LoginForm />
+        <LoginForm invite={invite} />
         {error === "google" && <p className="form-error">Google sign-in failed. Please try again.</p>}
         {error === "google_email_taken" && (
           <p className="form-error">
@@ -31,7 +31,7 @@ export default async function LoginPage({
           Continue with Google
         </a>
         <p className="auth__alt">
-          No account? <Link href="/signup">Create one</Link>
+          No account? <Link href={invite ? `/signup?invite=${invite}` : "/signup"}>Create one</Link>
         </p>
       </div>
     </main>

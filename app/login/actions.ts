@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db/prisma";
 import { verifyPassword } from "@/lib/crypto/password";
 import { createSession, destroySession } from "@/lib/auth/session";
+import { joinProjectByInviteToken } from "@/lib/projects/mutations";
 
 export type LoginState = { status: "idle" } | { status: "error"; message: string };
 
@@ -29,6 +30,13 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
   }
 
   await createSession(user.id);
+
+  const invite = String(formData.get("invite") ?? "").trim();
+  if (invite) {
+    const joined = await joinProjectByInviteToken(user.id, invite);
+    if (joined.ok) redirect(`/projects/${joined.slug}`);
+  }
+
   redirect("/projects");
 }
 

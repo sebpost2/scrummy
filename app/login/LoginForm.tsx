@@ -6,11 +6,12 @@ import { login, type LoginState } from "./actions";
 
 const initialState: LoginState = { status: "idle" };
 
-export function LoginForm() {
+export function LoginForm({ invite }: { invite?: string }) {
   const [state, formAction, pending] = useActionState(login, initialState);
 
   return (
     <form action={formAction} className="form">
+      {invite && <input type="hidden" name="invite" value={invite} />}
       <label className="field">
         <span className="field__label">Email</span>
         <input type="email" name="email" placeholder="you@example.com" required autoComplete="email" className="input" />
