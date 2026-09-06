@@ -1,5 +1,3 @@
-import { randomUUID } from "node:crypto";
-
 import { enqueue } from "@/lib/sync/outbox";
 import type { OutboxMutationType } from "@/lib/sync/types";
 
@@ -17,7 +15,7 @@ export async function callAction<T>(
     if (!isNetworkFailure(err)) throw err;
 
     await enqueue({
-      id: randomUUID(),
+      id: crypto.randomUUID(),
       type: meta.type,
       args: meta.args,
       clientTimestamp: Date.now(),
