@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import type { TaskEventType } from "@prisma/client";
 
 import { Nav } from "@/app/_components/Nav";
 import { PageHeader } from "@/app/_components/PageHeader";
@@ -10,21 +9,7 @@ import { prisma } from "@/lib/db/prisma";
 
 import { TaskProperties } from "./TaskProperties";
 import { CommentForm } from "./CommentForm";
-
-const EVENT_LABEL: Record<TaskEventType, string> = {
-  CREATED: "created this task",
-  STATUS_CHANGED: "changed the status",
-  REASSIGNED: "reassigned it",
-  PRIORITY_CHANGED: "changed the priority",
-  DUE_DATE_CHANGED: "changed the due date",
-  LABELS_CHANGED: "updated the labels",
-  EDITED: "edited the task",
-  COMMENTED: "commented",
-};
-
-function formatTimestamp(date: Date) {
-  return date.toISOString().slice(0, 16).replace("T", " ");
-}
+import Timeline from "./Timeline";
 
 export default async function TaskDetailPage({
   params,
@@ -64,23 +49,15 @@ export default async function TaskDetailPage({
 
               <section className="stack">
                 <h2>Activity</h2>
-                <ul className="timeline">
-                  {detail.events.map((event) => (
-                    <li
-                      key={event.id}
-                      className={`timeline__item${event.type === "COMMENTED" ? " timeline__item--comment" : ""}`}
-                    >
-                      <div className="timeline__head">
-                        <span className="timeline__actor">{event.user.name}</span>
-                        <span className="timeline__event">{EVENT_LABEL[event.type]}</span>
-                        <time className="timeline__time" dateTime={event.createdAt.toISOString()}>
-                          {formatTimestamp(event.createdAt)}
-                        </time>
-                      </div>
-                      {event.comment && <p className="timeline__comment">{event.comment}</p>}
-                    </li>
-                  ))}
-                </ul>
+                <Timeline
+                  events={detail.events.map((ev) => ({
+                    id: ev.id,
+                    type: ev.type,
+                    userName: ev.user.name,
+                    comment: ev.comment,
+                    createdAt: ev.createdAt,
+                  }))}
+                />
               </section>
 
               <section className="stack">
