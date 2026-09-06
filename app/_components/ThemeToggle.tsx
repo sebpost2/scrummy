@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Sun, Moon, Monitor } from "lucide-react";
 
 import IconButton from "./IconButton";
@@ -18,11 +18,10 @@ export default function ThemeToggle() {
   const [mode, setMode] = useState<Mode>("system");
   const [mounted, setMounted] = useState(false);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const stored = (localStorage.getItem("scrummy-theme") as Mode | null) ?? "system";
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMode(stored);
-    apply(stored);
     setMounted(true);
   }, []);
 
