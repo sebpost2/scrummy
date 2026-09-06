@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db/prisma";
 import { hashPassword } from "@/lib/crypto/password";
 import { createSession } from "@/lib/auth/session";
+import { joinProjectByInviteToken } from "@/lib/projects/mutations";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -35,5 +36,12 @@ export async function createAccount(_prev: SignupState, formData: FormData): Pro
   }
 
   await createSession(userId);
+
+  const invite = String(formData.get("invite") ?? "").trim();
+  if (invite) {
+    const joined = await joinProjectByInviteToken(userId, invite);
+    if (joined.ok) redirect(`/projects/${joined.slug}`);
+  }
+
   redirect("/projects");
 }

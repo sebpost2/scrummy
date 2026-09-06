@@ -6,11 +6,12 @@ import { createAccount, type SignupState } from "./actions";
 
 const initialState: SignupState = { status: "idle" };
 
-export function SignupForm() {
+export function SignupForm({ invite }: { invite?: string }) {
   const [state, formAction, pending] = useActionState(createAccount, initialState);
 
   return (
     <form action={formAction} className="form">
+      {invite && <input type="hidden" name="invite" value={invite} />}
       <label className="field">
         <span className="field__label">Name</span>
         <input type="text" name="name" placeholder="Your name" required className="input" />

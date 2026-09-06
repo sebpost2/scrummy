@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach, afterAll, vi } from "vitest";
 
 import { prisma } from "@/lib/db/prisma";
+import { createProject } from "@/lib/projects/mutations";
 vi.mock("@/lib/auth/session", async () => {
   const actual = await vi.importActual<typeof import("@/lib/auth/session")>("@/lib/auth/session");
   return { ...actual, createSession: vi.fn().mockResolvedValue(undefined) };
@@ -8,10 +9,14 @@ vi.mock("@/lib/auth/session", async () => {
 import { createAccount } from "@/app/signup/actions";
 
 let createdEmail: string | undefined;
+let ownerId: string | undefined;
+let projectId: string | undefined;
 
 afterEach(async () => {
   if (createdEmail) await prisma.user.deleteMany({ where: { email: createdEmail } });
-  createdEmail = undefined;
+  if (projectId) await prisma.project.deleteMany({ where: { id: projectId } });
+  if (ownerId) await prisma.user.deleteMany({ where: { id: ownerId } });
+  createdEmail = ownerId = projectId = undefined;
 });
 
 afterAll(async () => {
@@ -85,5 +90,61 @@ describe("createAccount", () => {
       formData({ email, password: "password123", confirmPassword: "password123", name: "Ada 2" }),
     );
     expect(second.status).toBe("error");
+  });
+
+  it("joins the invited project and redirects to its board when an invite token is present", async () => {
+    const owner = await prisma.user.create({
+      data: { email: `signup-invite-owner-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
+    });
+    ownerId = owner.id;
+    const project = await createProject(owner.id, "Signup Invite Project");
+    projectId = project.id;
+    const email = `signup-invite-${Date.now()}@example.com`;
+    createdEmail = email;
+
+    let redirected: unknown;
+    try {
+      await createAccount(
+        { status: "idle" },
+        formData({
+          email,
+          password: "password123",
+          confirmPassword: "password123",
+          name: "Ada",
+          invite: project.inviteToken,
+        }),
+      );
+    } catch (err) {
+      redirected = err;
+    }
+    expect((redirected as { digest?: string } | undefined)?.digest).toContain(`/projects/${project.slug}`);
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    const membership = await prisma.projectMember.findUnique({
+      where: { userId_projectId: { userId: user!.id, projectId: project.id } },
+    });
+    expect(membership?.role).toBe("MEMBER");
+  });
+
+  it("falls back to /projects when the invite token is invalid", async () => {
+    const email = `signup-badinvite-${Date.now()}@example.com`;
+    createdEmail = email;
+
+    let redirected: unknown;
+    try {
+      await createAccount(
+        { status: "idle" },
+        formData({
+          email,
+          password: "password123",
+          confirmPassword: "password123",
+          name: "Ada",
+          invite: "not-a-real-token",
+        }),
+      );
+    } catch (err) {
+      redirected = err;
+    }
+    expect((redirected as { digest?: string } | undefined)?.digest).toMatch(/;\/projects;/);
   });
 });
