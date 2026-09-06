@@ -10,6 +10,8 @@ import {
   deleteProject,
   leaveProject,
   updateMemberRole,
+  regenerateInviteToken,
+  joinProjectByInviteToken,
 } from "@/lib/projects/mutations";
 
 let ownerId: string | undefined;
@@ -227,5 +229,87 @@ describe("deleteProject", () => {
     const { owner, project } = await ownerAndMember("del");
     expect(await deleteProject(owner.id, project.id)).toEqual({ ok: true });
     expect(await prisma.project.findUnique({ where: { id: project.id } })).toBeNull();
+  });
+});
+
+describe("regenerateInviteToken", () => {
+  it("lets an owner regenerate the invite token", async () => {
+    const owner = await prisma.user.create({
+      data: { email: `regen-owner-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
+    });
+    ownerId = owner.id;
+    const project = await createProject(owner.id, "Regen Project");
+    projectId = project.id;
+
+    const result = await regenerateInviteToken(owner.id, project.id);
+
+    expect(result.ok).toBe(true);
+    const updated = await prisma.project.findUnique({ where: { id: project.id } });
+    expect(updated?.inviteToken).not.toBe(project.inviteToken);
+  });
+
+  it("rejects a non-owner", async () => {
+    const owner = await prisma.user.create({
+      data: { email: `regen-owner2-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
+    });
+    ownerId = owner.id;
+    const member = await prisma.user.create({
+      data: { email: `regen-member-${Date.now()}@example.com`, passwordHash: "x", name: "Member" },
+    });
+    memberId = member.id;
+    const project = await createProject(owner.id, "Regen Guarded Project");
+    projectId = project.id;
+    await addProjectMemberByEmail(owner.id, project.id, member.email);
+
+    const result = await regenerateInviteToken(member.id, project.id);
+
+    expect(result).toEqual({ ok: false, message: expect.any(String) });
+  });
+});
+
+describe("joinProjectByInviteToken", () => {
+  it("adds the visitor as a MEMBER and returns the project slug", async () => {
+    const owner = await prisma.user.create({
+      data: { email: `join-owner-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
+    });
+    ownerId = owner.id;
+    const project = await createProject(owner.id, "Join Project");
+    projectId = project.id;
+    const joiner = await prisma.user.create({
+      data: { email: `join-member-${Date.now()}@example.com`, passwordHash: "x", name: "Joiner" },
+    });
+    memberId = joiner.id;
+
+    const result = await joinProjectByInviteToken(joiner.id, project.inviteToken);
+
+    expect(result).toEqual({ ok: true, slug: project.slug });
+    expect((await getProjectMembership(joiner.id, project.id))?.role).toBe("MEMBER");
+  });
+
+  it("returns ok:false for an unknown token", async () => {
+    const owner = await prisma.user.create({
+      data: { email: `join-owner2-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
+    });
+    ownerId = owner.id;
+    const project = await createProject(owner.id, "Join Guarded Project");
+    projectId = project.id;
+
+    const result = await joinProjectByInviteToken(owner.id, "not-a-real-token");
+
+    expect(result).toEqual({ ok: false });
+  });
+
+  it("is idempotent and never downgrades an existing owner", async () => {
+    const owner = await prisma.user.create({
+      data: { email: `join-owner3-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
+    });
+    ownerId = owner.id;
+    const project = await createProject(owner.id, "Join Idempotent Project");
+    projectId = project.id;
+
+    await joinProjectByInviteToken(owner.id, project.inviteToken);
+    await joinProjectByInviteToken(owner.id, project.inviteToken);
+
+    expect((await getProjectMembership(owner.id, project.id))?.role).toBe("OWNER");
   });
 });

@@ -57,6 +57,38 @@ export async function addProjectMemberByEmail(
   return { ok: true };
 }
 
+const CANNOT_REGENERATE_INVITE = "Only an owner can regenerate the invite link.";
+
+export async function regenerateInviteToken(
+  userId: string,
+  projectId: string,
+): Promise<{ ok: true; token: string } | { ok: false; message: string }> {
+  const membership = await getProjectMembership(userId, projectId);
+  if (!membership || membership.role !== "OWNER") {
+    return { ok: false, message: CANNOT_REGENERATE_INVITE };
+  }
+
+  const token = randomBytes(16).toString("hex");
+  await prisma.project.update({ where: { id: projectId }, data: { inviteToken: token } });
+  return { ok: true, token };
+}
+
+export async function joinProjectByInviteToken(
+  userId: string,
+  token: string,
+): Promise<{ ok: true; slug: string } | { ok: false }> {
+  const project = await prisma.project.findUnique({ where: { inviteToken: token } });
+  if (!project) return { ok: false };
+
+  await prisma.projectMember.upsert({
+    where: { userId_projectId: { userId, projectId: project.id } },
+    update: {},
+    create: { userId, projectId: project.id, role: "MEMBER" },
+  });
+
+  return { ok: true, slug: project.slug };
+}
+
 const CANNOT_REMOVE_MEMBER = "Couldn't remove that member. You must own this project, and owners can't be removed.";
 
 export async function removeProjectMember(
