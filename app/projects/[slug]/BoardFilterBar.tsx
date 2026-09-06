@@ -13,36 +13,54 @@ export function BoardFilterBar({ members }: { members: { id: string; name: strin
     router.push(`?${next.toString()}`);
   }
 
+  const hasFilters =
+    searchParams.get("assignee") || searchParams.get("priority") || searchParams.get("label");
+
   return (
-    <div className="controls">
-      <select
-        className="input"
-        defaultValue={searchParams.get("assignee") ?? ""}
-        onChange={(e) => setParam("assignee", e.target.value)}
-      >
-        <option value="">Everyone</option>
-        {members.map((m) => (
-          <option key={m.id} value={m.id}>
-            {m.name}
-          </option>
-        ))}
-      </select>
-      <select
-        className="input"
-        defaultValue={searchParams.get("priority") ?? ""}
-        onChange={(e) => setParam("priority", e.target.value)}
-      >
-        <option value="">Any priority</option>
-        <option value="LOW">Low</option>
-        <option value="MEDIUM">Medium</option>
-        <option value="HIGH">High</option>
-      </select>
-      <input
-        className="input"
-        placeholder="Filter by label"
-        defaultValue={searchParams.get("label") ?? ""}
-        onBlur={(e) => setParam("label", e.target.value)}
-      />
+    <div className="toolbar">
+      <label className="toolbar__field">
+        <select
+          className="input"
+          defaultValue={searchParams.get("assignee") ?? ""}
+          onChange={(e) => setParam("assignee", e.target.value)}
+        >
+          <option value="">Everyone</option>
+          {members.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="toolbar__field">
+        <select
+          className="input"
+          defaultValue={searchParams.get("priority") ?? ""}
+          onChange={(e) => setParam("priority", e.target.value)}
+        >
+          <option value="">Any priority</option>
+          <option value="LOW">Low</option>
+          <option value="MEDIUM">Medium</option>
+          <option value="HIGH">High</option>
+        </select>
+      </label>
+      <label className="toolbar__field">
+        <input
+          className="input"
+          placeholder="Filter by label"
+          defaultValue={searchParams.get("label") ?? ""}
+          onBlur={(e) => setParam("label", e.target.value)}
+        />
+      </label>
+      {hasFilters && (
+        <button
+          type="button"
+          className="toolbar__clear"
+          onClick={() => router.push("?")}
+        >
+          Clear
+        </button>
+      )}
     </div>
   );
 }

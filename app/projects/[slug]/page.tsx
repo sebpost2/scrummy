@@ -1,21 +1,16 @@
 import { notFound } from "next/navigation";
-import type { TaskPriority, TaskStatus } from "@prisma/client";
+import type { TaskPriority } from "@prisma/client";
 
 import { Nav } from "@/app/_components/Nav";
 import { PageHeader } from "@/app/_components/PageHeader";
-import { TaskCard } from "@/app/_components/TaskCard";
 import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { getProjectMembership } from "@/lib/projects/mutations";
 import { getBoardTasks, type BoardFilters } from "@/lib/tasks/queries";
 
+import Board from "./Board";
 import { BoardFilterBar } from "./BoardFilterBar";
-
-const COLUMNS: { status: TaskStatus; label: string }[] = [
-  { status: "TODO", label: "To do" },
-  { status: "IN_PROGRESS", label: "In progress" },
-  { status: "DONE", label: "Done" },
-];
+import type { BoardTask } from "./board-state";
 
 export default async function BoardPage({
   params,
@@ -47,6 +42,16 @@ export default async function BoardPage({
     orderBy: { project: { createdAt: "desc" } },
   });
 
+  const boardTasks: BoardTask[] = tasks.map((t) => ({
+    id: t.id,
+    title: t.title,
+    status: t.status,
+    priority: t.priority,
+    assigneeName: t.assignee?.name ?? null,
+    dueDate: t.dueDate ? t.dueDate.toISOString() : null,
+    labels: t.labels,
+  }));
+
   return (
     <>
       <Nav
@@ -62,34 +67,7 @@ export default async function BoardPage({
           />
           <BoardFilterBar members={members.map((m) => ({ id: m.user.id, name: m.user.name }))} />
 
-          <div className="board">
-            {COLUMNS.map((col) => {
-              const columnTasks = tasks.filter((t) => t.status === col.status);
-              return (
-                <section key={col.status} className="board__column">
-                  <div className="board__column-head">
-                    <h2>{col.label}</h2>
-                    <span className="count">{columnTasks.length}</span>
-                  </div>
-                  {columnTasks.length === 0 ? (
-                    <p className="board__empty">Nothing here</p>
-                  ) : (
-                    columnTasks.map((task) => (
-                      <TaskCard
-                        key={task.id}
-                        href={`/projects/${slug}/tasks/${task.id}`}
-                        title={task.title}
-                        priority={task.priority}
-                        assigneeName={task.assignee?.name}
-                        dueDate={task.dueDate}
-                        labels={task.labels}
-                      />
-                    ))
-                  )}
-                </section>
-              );
-            })}
-          </div>
+          <Board slug={slug} tasks={boardTasks} />
         </div>
       </main>
     </>
