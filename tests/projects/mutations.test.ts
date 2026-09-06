@@ -313,3 +313,19 @@ describe("joinProjectByInviteToken", () => {
     expect((await getProjectMembership(owner.id, project.id))?.role).toBe("OWNER");
   });
 });
+
+describe("createProject — client-supplied id", () => {
+  it("uses a client-supplied id when given (for offline-created projects)", async () => {
+    const user = await prisma.user.create({
+      data: { email: `create-project-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
+    });
+    const clientId = `client-project-${Date.now()}`;
+
+    const project = await createProject(user.id, "Offline Project", clientId);
+
+    expect(project.id).toBe(clientId);
+
+    await prisma.project.deleteMany({ where: { id: project.id } });
+    await prisma.user.deleteMany({ where: { id: user.id } });
+  });
+});

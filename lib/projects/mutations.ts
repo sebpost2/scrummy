@@ -19,11 +19,11 @@ function slugify(name: string): string {
   return base || "project";
 }
 
-export async function createProject(userId: string, name: string): Promise<Project> {
+export async function createProject(userId: string, name: string, id?: string): Promise<Project> {
   const slug = `${slugify(name)}-${randomBytes(3).toString("hex")}`;
   const inviteToken = randomBytes(16).toString("hex");
   return prisma.$transaction(async (tx) => {
-    const project = await tx.project.create({ data: { name, slug, inviteToken, createdById: userId } });
+    const project = await tx.project.create({ data: { id, name, slug, inviteToken, createdById: userId } });
     await tx.projectMember.create({ data: { userId, projectId: project.id, role: "OWNER" } });
     return project;
   });
