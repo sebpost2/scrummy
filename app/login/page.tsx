@@ -11,12 +11,12 @@ export default async function LoginPage({
 
   return (
     <main className="container container--narrow">
-      <div className="stack">
-        <Link href="/" className="hero__brand">
+      <div className="auth">
+        <Link href="/" className="auth__brand">
           <span className="nav__mark" aria-hidden="true" />
           scrummy
         </Link>
-        <h1>Log in</h1>
+        <h1 className="auth__title">Log in</h1>
         <LoginForm />
         {error === "google" && <p className="form-error">Google sign-in failed. Please try again.</p>}
         {error === "google_email_taken" && (
@@ -24,10 +24,13 @@ export default async function LoginPage({
             An account with that email already exists. Log in with your password.
           </p>
         )}
-        <a href="/api/auth/google" className="button button--secondary">
+        <div className="divider">
+          <span>or</span>
+        </div>
+        <a href="/api/auth/google" className="button button--secondary auth__google">
           Continue with Google
         </a>
-        <p className="page-header__subtitle">
+        <p className="auth__alt">
           No account? <Link href="/signup">Create one</Link>
         </p>
       </div>

@@ -11,15 +11,21 @@ export function LoginForm() {
 
   return (
     <form action={formAction} className="form">
-      <input type="email" name="email" placeholder="you@example.com" required autoComplete="email" className="input" />
-      <input
-        type="password"
-        name="password"
-        placeholder="Password"
-        required
-        autoComplete="current-password"
-        className="input"
-      />
+      <label className="field">
+        <span className="field__label">Email</span>
+        <input type="email" name="email" placeholder="you@example.com" required autoComplete="email" className="input" />
+      </label>
+      <label className="field">
+        <span className="field__label">Password</span>
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          required
+          autoComplete="current-password"
+          className="input"
+        />
+      </label>
       <button type="submit" className="button" disabled={pending}>
         {pending ? "Logging in…" : "Log in"}
       </button>
