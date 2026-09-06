@@ -1162,3 +1162,45 @@ textarea.input {
 }
 @keyframes skeleton { from { background-position: 100% 50%; } to { background-position: 0 50%; } }
 @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+
+/* ============================================================
+   Task detail — two-column layout + properties panel
+   ============================================================ */
+.detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: var(--space-6);
+  align-items: start;
+}
+.detail__side {
+  position: sticky;
+  top: 64px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+}
+.props {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.props__row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.props__label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+@media (max-width: 860px) {
+  .detail { grid-template-columns: 1fr; }
+  .detail__side { position: static; }
+}
