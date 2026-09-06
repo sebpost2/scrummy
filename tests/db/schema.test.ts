@@ -1,3 +1,5 @@
+import { randomBytes } from "node:crypto";
+
 import { describe, it, expect, afterEach, afterAll } from "vitest";
 
 import { prisma } from "@/lib/db/prisma";
@@ -24,7 +26,12 @@ describe("schema", () => {
     userId = user.id;
 
     const project = await prisma.project.create({
-      data: { name: "Test Project", slug: `test-project-${Date.now()}`, createdById: user.id },
+      data: {
+        name: "Test Project",
+        slug: `test-project-${Date.now()}`,
+        inviteToken: randomBytes(16).toString("hex"),
+        createdById: user.id,
+      },
     });
     projectId = project.id;
 
