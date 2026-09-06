@@ -11,7 +11,7 @@ export default defineConfig({
   test: {
     env: { TZ: "UTC" },
     setupFiles: ["./tests/setup.ts"],
-    exclude: ["**/node_modules/**"],
+    exclude: ["**/node_modules/**", "**/.claude/worktrees/**"],
     testTimeout: 15000,
   },
 });

@@ -4,7 +4,6 @@ import type { ReactElement } from "react";
 
 import { prisma } from "@/lib/db/prisma";
 import { createProject } from "@/lib/projects/mutations";
-
 let currentUser: { id: string; name: string; email: string } | null = null;
 vi.mock("@/lib/auth/session", async () => {
   const actual = await vi.importActual<typeof import("@/lib/auth/session")>("@/lib/auth/session");
