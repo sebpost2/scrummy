@@ -48,7 +48,7 @@ export function TaskProperties({
 
   return (
     <div className="props">
-      <div className="props__row">
+      <label className="props__row">
         <span className="props__label">Status</span>
         <select
           className="input"
@@ -62,9 +62,9 @@ export function TaskProperties({
           <option value="IN_PROGRESS">In progress</option>
           <option value="DONE">Done</option>
         </select>
-      </div>
+      </label>
 
-      <div className="props__row">
+      <label className="props__row">
         <span className="props__label">Assignee</span>
         <select
           className="input"
@@ -81,9 +81,9 @@ export function TaskProperties({
             </option>
           ))}
         </select>
-      </div>
+      </label>
 
-      <div className="props__row">
+      <label className="props__row">
         <span className="props__label">Priority</span>
         <select
           className="input"
@@ -97,9 +97,9 @@ export function TaskProperties({
           <option value="MEDIUM">Medium</option>
           <option value="HIGH">High</option>
         </select>
-      </div>
+      </label>
 
-      <div className="props__row">
+      <label className="props__row">
         <span className="props__label">Due date</span>
         <input
           type="date"
@@ -109,9 +109,9 @@ export function TaskProperties({
             run({}, "due date", () => updateDueDateAction(task.id, slug, e.target.value))
           }
         />
-      </div>
+      </label>
 
-      <div className="props__row">
+      <label className="props__row">
         <span className="props__label">Labels</span>
         <input
           type="text"
@@ -122,7 +122,7 @@ export function TaskProperties({
             run({}, "labels", () => updateLabelsAction(task.id, slug, e.target.value))
           }
         />
-      </div>
+      </label>
     </div>
   );
 }

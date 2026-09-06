@@ -21,6 +21,7 @@ export function BoardFilterBar({ members }: { members: { id: string; name: strin
       <label className="toolbar__field">
         <select
           className="input"
+          aria-label="Assignee"
           defaultValue={searchParams.get("assignee") ?? ""}
           onChange={(e) => setParam("assignee", e.target.value)}
         >
@@ -35,6 +36,7 @@ export function BoardFilterBar({ members }: { members: { id: string; name: strin
       <label className="toolbar__field">
         <select
           className="input"
+          aria-label="Priority"
           defaultValue={searchParams.get("priority") ?? ""}
           onChange={(e) => setParam("priority", e.target.value)}
         >
@@ -47,6 +49,7 @@ export function BoardFilterBar({ members }: { members: { id: string; name: strin
       <label className="toolbar__field">
         <input
           className="input"
+          aria-label="Label"
           placeholder="Filter by label"
           defaultValue={searchParams.get("label") ?? ""}
           onBlur={(e) => setParam("label", e.target.value)}

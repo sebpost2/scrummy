@@ -32,7 +32,12 @@ export default function RelativeTime({
 }) {
   const d = typeof date === "string" ? new Date(date) : date;
   return (
-    <time dateTime={d.toISOString()} title={d.toLocaleString()} className={className}>
+    <time
+      dateTime={d.toISOString()}
+      title={d.toLocaleString()}
+      className={className}
+      suppressHydrationWarning
+    >
       {formatRelative(d)}
     </time>
   );

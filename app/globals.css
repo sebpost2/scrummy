@@ -237,8 +237,8 @@ p {
 }
 
 .container--narrow {
-  max-width: 400px;
-  padding-top: 12vh;
+  max-width: 380px;
+  padding-top: 10vh;
 }
 
 .stack {
@@ -441,20 +441,6 @@ textarea.input {
   border-color: var(--text-subtle);
 }
 
-.button--link {
-  padding: 0;
-  color: var(--accent);
-  background: none;
-  border: none;
-  font-weight: 500;
-}
-
-.button--link:hover {
-  color: var(--accent-hover);
-  background: none;
-  text-decoration: underline;
-}
-
 .form-error {
   color: var(--danger);
   font-size: 0.8125rem;
@@ -592,6 +578,16 @@ textarea.input {
   opacity: 1;
 }
 
+.card__grip:focus-visible {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .card__grip {
+    opacity: 1;
+  }
+}
+
 .card__meta {
   display: flex;
   align-items: center;
@@ -616,10 +612,15 @@ textarea.input {
 .composer {
   display: flex;
   gap: var(--space-2);
+  flex-wrap: wrap;
 }
 
 .composer .input {
   flex: 1;
+}
+
+.composer .form-error {
+  flex-basis: 100%;
 }
 
 .composer__open {
@@ -1112,6 +1113,14 @@ textarea.input {
 
   .container {
     padding: 24px 16px 80px;
+  }
+
+  .nav__links .nav__link {
+    display: none;
+  }
+
+  .nav__project {
+    max-width: 96px;
   }
 }
 

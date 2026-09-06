@@ -7,7 +7,11 @@ import Avatar from "./Avatar";
 
 export default function UserMenu({ user }: { user: { name: string; email: string } }) {
   return (
-    <Menu align="end" trigger={<Avatar name={user.name} size="sm" />}>
+    <Menu
+      align="end"
+      label={`Account: ${user.name}`}
+      trigger={<Avatar name={user.name} size="sm" />}
+    >
       <div className="menu__header">
         <span className="menu__header-name">{user.name}</span>
         <span className="menu__header-email">{user.email}</span>

@@ -16,10 +16,12 @@ export default function Menu({
   trigger,
   children,
   align = "end",
+  label,
 }: {
   trigger: ReactNode;
   children: ReactNode;
   align?: "start" | "end";
+  label?: string;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -45,6 +47,7 @@ export default function Menu({
       <button
         type="button"
         className="menu__trigger"
+        aria-label={label}
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
