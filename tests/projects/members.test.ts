@@ -47,6 +47,8 @@ describe("MembersPage", () => {
 
     expect(html).toContain("Owner");
     expect(html).toContain("Member");
+    expect(html).toContain("Invite link");
+    expect(html).toContain(`/invite/${project.inviteToken}`);
   });
 
   it("returns notFound for a non-owner", async () => {
