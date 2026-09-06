@@ -28,6 +28,9 @@ export default function ProjectSwitcher({
         </MenuItem>
       ))}
       <MenuSeparator />
+      {currentSlug && (
+        <MenuItem href={`/projects/${currentSlug}/settings`}>Project settings</MenuItem>
+      )}
       <MenuItem href="/projects">All projects</MenuItem>
     </Menu>
   );

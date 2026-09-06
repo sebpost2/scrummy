@@ -2,7 +2,14 @@ import { describe, it, expect, afterEach, afterAll } from "vitest";
 
 import { prisma } from "@/lib/db/prisma";
 import { createProject, addProjectMemberByEmail } from "@/lib/projects/mutations";
-import { createTask, reassignTask, updateTaskPriority, updateTaskLabels, addTaskComment } from "@/lib/tasks/mutations";
+import {
+  createTask,
+  reassignTask,
+  updateTaskPriority,
+  updateTaskStatus,
+  updateTaskLabels,
+  addTaskComment,
+} from "@/lib/tasks/mutations";
 import { getBoardTasks, getMyTasks, getTaskWithEvents } from "@/lib/tasks/queries";
 
 let ownerId: string | undefined;
@@ -55,6 +62,22 @@ describe("getBoardTasks", () => {
 
     const all = await getBoardTasks(project.id, {});
     expect(all).toHaveLength(2);
+  });
+
+  it("filters by status and by a case-insensitive title search", async () => {
+    const { owner, project } = await setup();
+    const done = await createTask(owner.id, project.id, { title: "Ship the Widget" });
+    await updateTaskStatus(owner.id, done.id, "DONE");
+    await createTask(owner.id, project.id, { title: "Plan the offsite" });
+
+    const byStatus = await getBoardTasks(project.id, { status: "DONE" });
+    expect(byStatus.map((t) => t.title)).toEqual(["Ship the Widget"]);
+
+    const bySearch = await getBoardTasks(project.id, { q: "widget" });
+    expect(bySearch.map((t) => t.title)).toEqual(["Ship the Widget"]);
+
+    const noMatch = await getBoardTasks(project.id, { q: "nonexistent" });
+    expect(noMatch).toHaveLength(0);
   });
 });
 

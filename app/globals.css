@@ -441,6 +441,76 @@ textarea.input {
   border-color: var(--text-subtle);
 }
 
+.button--danger {
+  color: #fff;
+  background: var(--danger);
+  border-color: transparent;
+}
+.button--danger:hover {
+  color: #fff;
+  background: var(--danger);
+  filter: brightness(0.92);
+}
+
+.danger-zone {
+  display: flex;
+  gap: var(--space-2, 10px);
+  flex-wrap: wrap;
+}
+
+.linkish {
+  font: inherit;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.linkish:hover { color: var(--text); text-decoration: underline; }
+.linkish--danger { color: var(--danger); }
+.linkish:disabled { opacity: 0.55; cursor: default; }
+
+.subtasks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.subtasks__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+}
+.subtasks__check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  flex: 1;
+  cursor: pointer;
+}
+.subtasks__title--done {
+  color: var(--text-subtle);
+  text-decoration: line-through;
+}
+
+.timeline__comment-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 12px);
+  margin-top: 4px;
+}
+.timeline__comment--deleted {
+  font-style: italic;
+  color: var(--text-subtle);
+}
+.timeline__edited {
+  font-size: var(--text-xs);
+  color: var(--text-subtle);
+}
+
 .form-error {
   color: var(--danger);
   font-size: 0.8125rem;
@@ -744,6 +814,31 @@ textarea.input {
   color: var(--text-muted);
   max-width: 68ch;
 }
+.description:hover { color: var(--text); cursor: text; }
+.description--empty {
+  display: block; width: 100%; text-align: left; padding: 0;
+  font: inherit; color: var(--text-subtle); background: none; border: 0; cursor: text;
+}
+.description--empty:hover { color: var(--text-muted); }
+.description__input {
+  width: 100%; max-width: 68ch; min-height: 96px; resize: vertical; font: inherit;
+}
+
+.editable-title {
+  cursor: text; border-radius: 5px; margin: -2px -4px; padding: 2px 4px;
+}
+.editable-title:hover { background: var(--surface-hover); }
+.editable-title__input {
+  font-size: var(--text-2xl, 1.5rem); font-weight: 700; width: 100%; max-width: 40ch;
+}
+
+.card__menu {
+  position: absolute; top: 6px; right: 6px; z-index: 5; opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+.card:hover .card__menu,
+.card__menu:focus-within { opacity: 1; }
+@media (hover: none) { .card__menu { opacity: 1; } }
 
 /* ============================================================
    Controls row (filter bar, task controls)

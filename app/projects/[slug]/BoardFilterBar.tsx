@@ -14,10 +14,27 @@ export function BoardFilterBar({ members }: { members: { id: string; name: strin
   }
 
   const hasFilters =
-    searchParams.get("assignee") || searchParams.get("priority") || searchParams.get("label");
+    searchParams.get("assignee") ||
+    searchParams.get("priority") ||
+    searchParams.get("label") ||
+    searchParams.get("status") ||
+    searchParams.get("q");
 
   return (
     <div className="toolbar">
+      <label className="toolbar__field">
+        <input
+          className="input"
+          type="search"
+          aria-label="Search tasks"
+          placeholder="Search titles"
+          defaultValue={searchParams.get("q") ?? ""}
+          onBlur={(e) => setParam("q", e.target.value.trim())}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") setParam("q", e.currentTarget.value.trim());
+          }}
+        />
+      </label>
       <label className="toolbar__field">
         <select
           className="input"
@@ -31,6 +48,19 @@ export function BoardFilterBar({ members }: { members: { id: string; name: strin
               {m.name}
             </option>
           ))}
+        </select>
+      </label>
+      <label className="toolbar__field">
+        <select
+          className="input"
+          aria-label="Status"
+          defaultValue={searchParams.get("status") ?? ""}
+          onChange={(e) => setParam("status", e.target.value)}
+        >
+          <option value="">Any status</option>
+          <option value="TODO">To do</option>
+          <option value="IN_PROGRESS">In progress</option>
+          <option value="DONE">Done</option>
         </select>
       </label>
       <label className="toolbar__field">

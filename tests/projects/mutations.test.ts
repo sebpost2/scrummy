@@ -1,7 +1,16 @@
 import { describe, it, expect, afterEach, afterAll } from "vitest";
 
 import { prisma } from "@/lib/db/prisma";
-import { createProject, getProjectMembership, addProjectMemberByEmail } from "@/lib/projects/mutations";
+import {
+  createProject,
+  getProjectMembership,
+  addProjectMemberByEmail,
+  removeProjectMember,
+  renameProject,
+  deleteProject,
+  leaveProject,
+  updateMemberRole,
+} from "@/lib/projects/mutations";
 
 let ownerId: string | undefined;
 let memberId: string | undefined;
@@ -83,5 +92,128 @@ describe("addProjectMemberByEmail", () => {
     const result = await addProjectMemberByEmail(member.id, project.id, "someoneelse@example.com");
 
     expect(result).toEqual({ ok: false, message: expect.any(String) });
+  });
+});
+
+describe("removeProjectMember", () => {
+  it("lets an owner remove a member", async () => {
+    const owner = await prisma.user.create({
+      data: { email: `rm-owner-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
+    });
+    ownerId = owner.id;
+    const member = await prisma.user.create({
+      data: { email: `rm-member-${Date.now()}@example.com`, passwordHash: "x", name: "Member" },
+    });
+    memberId = member.id;
+    const project = await createProject(owner.id, "Removable Project");
+    projectId = project.id;
+    await addProjectMemberByEmail(owner.id, project.id, member.email);
+
+    const result = await removeProjectMember(owner.id, project.id, member.id);
+
+    expect(result).toEqual({ ok: true });
+    expect(await getProjectMembership(member.id, project.id)).toBeNull();
+  });
+
+  it("rejects a non-owner", async () => {
+    const owner = await prisma.user.create({
+      data: { email: `rm-owner2-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
+    });
+    ownerId = owner.id;
+    const member = await prisma.user.create({
+      data: { email: `rm-member2-${Date.now()}@example.com`, passwordHash: "x", name: "Member" },
+    });
+    memberId = member.id;
+    const project = await createProject(owner.id, "Guarded Project");
+    projectId = project.id;
+    await addProjectMemberByEmail(owner.id, project.id, member.email);
+
+    const result = await removeProjectMember(member.id, project.id, owner.id);
+
+    expect(result).toEqual({ ok: false, message: expect.any(String) });
+    expect(await getProjectMembership(owner.id, project.id)).not.toBeNull();
+  });
+
+  it("refuses to remove an owner", async () => {
+    const owner = await prisma.user.create({
+      data: { email: `rm-owner3-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
+    });
+    ownerId = owner.id;
+    const project = await createProject(owner.id, "Solo Owner Project");
+    projectId = project.id;
+
+    const result = await removeProjectMember(owner.id, project.id, owner.id);
+
+    expect(result).toEqual({ ok: false, message: expect.any(String) });
+    expect(await getProjectMembership(owner.id, project.id)).not.toBeNull();
+  });
+});
+
+async function ownerAndMember(tag: string) {
+  const owner = await prisma.user.create({
+    data: { email: `${tag}-owner-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
+  });
+  ownerId = owner.id;
+  const member = await prisma.user.create({
+    data: { email: `${tag}-member-${Date.now()}@example.com`, passwordHash: "x", name: "Member" },
+  });
+  memberId = member.id;
+  const project = await createProject(owner.id, `${tag} Project`);
+  projectId = project.id;
+  await addProjectMemberByEmail(owner.id, project.id, member.email);
+  return { owner, member, project };
+}
+
+describe("renameProject", () => {
+  it("lets an owner rename and rejects a member", async () => {
+    const { owner, member, project } = await ownerAndMember("rename");
+
+    expect(await renameProject(owner.id, project.id, "  New Name  ")).toEqual({ ok: true });
+    expect((await prisma.project.findUnique({ where: { id: project.id } }))?.name).toBe("New Name");
+
+    expect(await renameProject(member.id, project.id, "Nope")).toEqual({
+      ok: false,
+      message: expect.any(String),
+    });
+  });
+});
+
+describe("leaveProject", () => {
+  it("lets a member leave", async () => {
+    const { member, project } = await ownerAndMember("leave");
+    expect(await leaveProject(member.id, project.id)).toEqual({ ok: true });
+    expect(await getProjectMembership(member.id, project.id)).toBeNull();
+  });
+
+  it("blocks the only owner from leaving", async () => {
+    const { owner, project } = await ownerAndMember("leave-owner");
+    expect(await leaveProject(owner.id, project.id)).toEqual({
+      ok: false,
+      message: expect.any(String),
+    });
+  });
+});
+
+describe("updateMemberRole", () => {
+  it("promotes a member to owner", async () => {
+    const { owner, member, project } = await ownerAndMember("role");
+    expect(await updateMemberRole(owner.id, project.id, member.id, "OWNER")).toEqual({ ok: true });
+    expect((await getProjectMembership(member.id, project.id))?.role).toBe("OWNER");
+  });
+
+  it("won't demote the last owner", async () => {
+    const { owner, project } = await ownerAndMember("role-last");
+    expect(await updateMemberRole(owner.id, project.id, owner.id, "MEMBER")).toEqual({
+      ok: false,
+      message: expect.any(String),
+    });
+  });
+});
+
+describe("deleteProject", () => {
+  it("lets an owner delete the project", async () => {
+    const { owner, project } = await ownerAndMember("del");
+    expect(await deleteProject(owner.id, project.id)).toEqual({ ok: true });
+    expect(await prisma.project.findUnique({ where: { id: project.id } })).toBeNull();
   });
 });

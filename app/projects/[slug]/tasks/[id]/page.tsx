@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 
 import { Nav } from "@/app/_components/Nav";
-import { PageHeader } from "@/app/_components/PageHeader";
 import { requireUser } from "@/lib/auth/session";
 import { getProjectMembership } from "@/lib/projects/mutations";
 import { getTaskWithEvents } from "@/lib/tasks/queries";
@@ -9,6 +8,10 @@ import { prisma } from "@/lib/db/prisma";
 
 import { TaskProperties } from "./TaskProperties";
 import { CommentForm } from "./CommentForm";
+import { EditableTitle } from "./EditableTitle";
+import { DescriptionEditor } from "./DescriptionEditor";
+import { TaskActions } from "./TaskActions";
+import { Subtasks } from "./Subtasks";
 import Timeline from "./Timeline";
 
 export default async function TaskDetailPage({
@@ -41,21 +44,41 @@ export default async function TaskDetailPage({
       />
       <main className="container">
         <div className="stack">
-          <PageHeader title={detail.title} subtitle={detail.project.name} />
+          <header className="page-header">
+            <div className="page-header__titles">
+              <EditableTitle taskId={id} slug={slug} initial={detail.title} />
+              <p className="page-header__subtitle">{detail.project.name}</p>
+            </div>
+            <div className="page-header__actions">
+              <TaskActions taskId={id} slug={slug} />
+            </div>
+          </header>
 
           <div className="detail">
             <div className="stack">
-              {detail.description && <p className="description">{detail.description}</p>}
+              <DescriptionEditor taskId={id} slug={slug} initial={detail.description} />
+
+              <Subtasks
+                taskId={id}
+                slug={slug}
+                items={detail.subtasks.map((s) => ({ id: s.id, title: s.title, done: s.done }))}
+              />
 
               <section className="stack">
                 <h2>Activity</h2>
                 <Timeline
+                  currentUserId={user.id}
+                  slug={slug}
+                  taskId={id}
                   events={detail.events.map((ev) => ({
                     id: ev.id,
                     type: ev.type,
+                    userId: ev.userId,
                     userName: ev.user.name,
                     comment: ev.comment,
                     createdAt: ev.createdAt,
+                    editedAt: ev.editedAt,
+                    deletedAt: ev.deletedAt,
                   }))}
                 />
               </section>

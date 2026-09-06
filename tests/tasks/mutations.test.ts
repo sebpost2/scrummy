@@ -9,7 +9,16 @@ import {
   updateTaskPriority,
   updateTaskDueDate,
   updateTaskLabels,
+  updateTaskTitle,
+  updateTaskDescription,
+  deleteTask,
+  reorderTask,
   addTaskComment,
+  editTaskComment,
+  deleteTaskComment,
+  addSubtask,
+  toggleSubtask,
+  deleteSubtask,
 } from "@/lib/tasks/mutations";
 
 let ownerId: string | undefined;
@@ -156,6 +165,86 @@ describe("updateTaskLabels", () => {
   });
 });
 
+describe("updateTaskTitle", () => {
+  it("updates the title and records an EDITED event with old/new values", async () => {
+    const { owner, project } = await setup();
+    const task = await createTask(owner.id, project.id, { title: "Old title" });
+
+    const updated = await updateTaskTitle(owner.id, task.id, "  New title  ");
+
+    expect(updated.title).toBe("New title");
+    const event = await prisma.taskEvent.findFirst({ where: { taskId: task.id, type: "EDITED" } });
+    expect(event?.oldValue).toBe("Old title");
+    expect(event?.newValue).toBe("New title");
+  });
+
+  it("rejects an empty title", async () => {
+    const { owner, project } = await setup();
+    const task = await createTask(owner.id, project.id, { title: "Keep me" });
+
+    await expect(updateTaskTitle(owner.id, task.id, "   ")).rejects.toThrow("TITLE_REQUIRED");
+  });
+
+  it("does not write an event when the title is unchanged", async () => {
+    const { owner, project } = await setup();
+    const task = await createTask(owner.id, project.id, { title: "Same" });
+
+    await updateTaskTitle(owner.id, task.id, "Same");
+
+    const events = await prisma.taskEvent.findMany({ where: { taskId: task.id } });
+    expect(events).toHaveLength(1); // only CREATED
+  });
+});
+
+describe("updateTaskDescription", () => {
+  it("sets a description and records an EDITED event", async () => {
+    const { owner, project } = await setup();
+    const task = await createTask(owner.id, project.id, { title: "Describe me" });
+
+    const updated = await updateTaskDescription(owner.id, task.id, "Now with detail");
+
+    expect(updated.description).toBe("Now with detail");
+    const event = await prisma.taskEvent.findFirst({ where: { taskId: task.id, type: "EDITED" } });
+    expect(event).not.toBeNull();
+  });
+
+  it("clears the description when given blank text", async () => {
+    const { owner, project } = await setup();
+    const task = await createTask(owner.id, project.id, { title: "Describe me" });
+    await updateTaskDescription(owner.id, task.id, "temp");
+
+    const updated = await updateTaskDescription(owner.id, task.id, "   ");
+
+    expect(updated.description).toBeNull();
+  });
+
+  it("rejects a non-member", async () => {
+    const { owner, project, outsider } = await setup();
+    const task = await createTask(owner.id, project.id, { title: "Guarded" });
+
+    await expect(updateTaskDescription(outsider.id, task.id, "hi")).rejects.toThrow("NOT_A_MEMBER");
+  });
+});
+
+describe("deleteTask", () => {
+  it("removes the task and its events", async () => {
+    const { owner, project } = await setup();
+    const task = await createTask(owner.id, project.id, { title: "Delete me" });
+
+    await deleteTask(owner.id, task.id);
+
+    expect(await prisma.task.findUnique({ where: { id: task.id } })).toBeNull();
+    expect(await prisma.taskEvent.findMany({ where: { taskId: task.id } })).toHaveLength(0);
+  });
+
+  it("rejects a non-member", async () => {
+    const { owner, project, outsider } = await setup();
+    const task = await createTask(owner.id, project.id, { title: "Guarded" });
+
+    await expect(deleteTask(outsider.id, task.id)).rejects.toThrow("NOT_A_MEMBER");
+  });
+});
+
 describe("addTaskComment", () => {
   it("appends a COMMENTED event without changing the Task row", async () => {
     const { owner, project } = await setup();
@@ -172,5 +261,86 @@ describe("addTaskComment", () => {
     const task = await createTask(owner.id, project.id, { title: "Discuss me" });
 
     await expect(addTaskComment(owner.id, task.id, "   ")).rejects.toThrow("COMMENT_REQUIRED");
+  });
+});
+
+describe("reorderTask", () => {
+  it("sets rank and rejects a non-member", async () => {
+    const { owner, project, outsider } = await setup();
+    const task = await createTask(owner.id, project.id, { title: "Rank me" });
+
+    const updated = await reorderTask(owner.id, task.id, 42.5);
+    expect(updated.rank).toBe(42.5);
+
+    await expect(reorderTask(outsider.id, task.id, 1)).rejects.toThrow("NOT_A_MEMBER");
+  });
+});
+
+describe("editTaskComment / deleteTaskComment", () => {
+  async function commentEvent(userId: string, taskId: string, body: string) {
+    await addTaskComment(userId, taskId, body);
+    const ev = await prisma.taskEvent.findFirst({
+      where: { taskId, type: "COMMENTED" },
+      orderBy: { createdAt: "desc" },
+    });
+    return ev!;
+  }
+
+  it("lets the author edit and stamps editedAt", async () => {
+    const { owner, project } = await setup();
+    const task = await createTask(owner.id, project.id, { title: "T" });
+    const ev = await commentEvent(owner.id, task.id, "first");
+
+    await editTaskComment(owner.id, ev.id, "second");
+
+    const after = await prisma.taskEvent.findUnique({ where: { id: ev.id } });
+    expect(after?.comment).toBe("second");
+    expect(after?.editedAt).not.toBeNull();
+  });
+
+  it("rejects a non-author editor", async () => {
+    const { owner, project, outsider } = await setup();
+    const task = await createTask(owner.id, project.id, { title: "T" });
+    const ev = await commentEvent(owner.id, task.id, "mine");
+
+    await expect(editTaskComment(outsider.id, ev.id, "hijack")).rejects.toThrow();
+  });
+
+  it("soft-deletes with deletedAt and is idempotent", async () => {
+    const { owner, project } = await setup();
+    const task = await createTask(owner.id, project.id, { title: "T" });
+    const ev = await commentEvent(owner.id, task.id, "bye");
+
+    await deleteTaskComment(owner.id, ev.id);
+    await deleteTaskComment(owner.id, ev.id);
+
+    const after = await prisma.taskEvent.findUnique({ where: { id: ev.id } });
+    expect(after?.deletedAt).not.toBeNull();
+  });
+});
+
+describe("subtasks", () => {
+  it("adds, toggles, and deletes a subtask; blocks outsiders", async () => {
+    const { owner, project, outsider } = await setup();
+    const task = await createTask(owner.id, project.id, { title: "Parent" });
+
+    const sub = await addSubtask(owner.id, task.id, "  step one  ");
+    expect(sub.title).toBe("step one");
+    expect(sub.done).toBe(false);
+
+    await expect(addSubtask(outsider.id, task.id, "nope")).rejects.toThrow("NOT_A_MEMBER");
+
+    const toggled = await toggleSubtask(owner.id, sub.id, true);
+    expect(toggled.done).toBe(true);
+
+    await deleteSubtask(owner.id, sub.id);
+    expect(await prisma.subtask.findUnique({ where: { id: sub.id } })).toBeNull();
+  });
+
+  it("rejects an empty subtask title", async () => {
+    const { owner, project } = await setup();
+    const task = await createTask(owner.id, project.id, { title: "Parent" });
+
+    await expect(addSubtask(owner.id, task.id, "   ")).rejects.toThrow("SUBTASK_TITLE_REQUIRED");
   });
 });

@@ -81,6 +81,7 @@ model Task {
   description String?
   status      TaskStatus   @default(TODO)
   priority    TaskPriority @default(MEDIUM)
+  rank        Float        @default(0)
   dueDate     DateTime?
   labels      String[]     @default([])
   assigneeId  String?
@@ -90,10 +91,22 @@ model Task {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
-  events TaskEvent[]
+  events   TaskEvent[]
+  subtasks Subtask[]
 
   @@index([projectId, status])
   @@index([assigneeId])
+}
+
+model Subtask {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  title     String
+  done      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
 }
 
 enum TaskEventType {
@@ -118,6 +131,8 @@ model TaskEvent {
   newValue  String?
   comment   String?
   createdAt DateTime      @default(now())
+  editedAt  DateTime?
+  deletedAt DateTime?
 
   @@index([taskId, createdAt])
 }

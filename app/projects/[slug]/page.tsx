@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import type { TaskPriority } from "@prisma/client";
+import type { TaskPriority, TaskStatus } from "@prisma/client";
 
 import { Nav } from "@/app/_components/Nav";
 import { PageHeader } from "@/app/_components/PageHeader";
@@ -17,7 +17,13 @@ export default async function BoardPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ assignee?: string; label?: string; priority?: string }>;
+  searchParams: Promise<{
+    assignee?: string;
+    label?: string;
+    priority?: string;
+    status?: string;
+    q?: string;
+  }>;
 }) {
   const user = await requireUser();
   const { slug } = await params;
@@ -33,6 +39,8 @@ export default async function BoardPage({
     assigneeId: query.assignee || undefined,
     label: query.label || undefined,
     priority: (query.priority as TaskPriority) || undefined,
+    status: (query.status as TaskStatus) || undefined,
+    q: query.q?.trim() || undefined,
   };
   const tasks = await getBoardTasks(project.id, filters);
   const members = await prisma.projectMember.findMany({ where: { projectId: project.id }, include: { user: true } });
@@ -47,9 +55,12 @@ export default async function BoardPage({
     title: t.title,
     status: t.status,
     priority: t.priority,
+    rank: t.rank,
     assigneeName: t.assignee?.name ?? null,
     dueDate: t.dueDate ? t.dueDate.toISOString() : null,
     labels: t.labels,
+    subtaskDone: t.subtasks.filter((s) => s.done).length,
+    subtaskTotal: t.subtasks.length,
   }));
 
   return (
@@ -67,7 +78,11 @@ export default async function BoardPage({
           />
           <BoardFilterBar members={members.map((m) => ({ id: m.user.id, name: m.user.name }))} />
 
-          <Board slug={slug} tasks={boardTasks} />
+          <Board
+            slug={slug}
+            tasks={boardTasks}
+            members={members.map((m) => ({ id: m.user.id, name: m.user.name }))}
+          />
         </div>
       </main>
     </>

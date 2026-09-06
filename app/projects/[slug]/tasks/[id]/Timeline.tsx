@@ -6,6 +6,8 @@ import {
 
 import RelativeTime from "@/app/_components/RelativeTime";
 
+import { CommentActions } from "./CommentActions";
+
 const VERB: Record<TaskEventType, string> = {
   CREATED: "created this task",
   STATUS_CHANGED: "changed the status",
@@ -31,12 +33,25 @@ const ICON: Record<TaskEventType, LucideIcon> = {
 export type TimelineEvent = {
   id: string;
   type: TaskEventType;
+  userId: string;
   userName: string;
   comment: string | null;
   createdAt: Date;
+  editedAt: Date | null;
+  deletedAt: Date | null;
 };
 
-export default function Timeline({ events }: { events: TimelineEvent[] }) {
+export default function Timeline({
+  events,
+  currentUserId,
+  slug,
+  taskId,
+}: {
+  events: TimelineEvent[];
+  currentUserId: string;
+  slug: string;
+  taskId: string;
+}) {
   return (
     <ul className="timeline">
       {events.map((e, i) => {
@@ -58,7 +73,26 @@ export default function Timeline({ events }: { events: TimelineEvent[] }) {
                   <span className="timeline__event">{VERB[e.type]}</span>
                   <RelativeTime className="timeline__time" date={e.createdAt} />
                 </div>
-                {e.comment && <p className="timeline__comment">{e.comment}</p>}
+                {e.type === "COMMENTED" && e.deletedAt ? (
+                  <p className="timeline__comment timeline__comment--deleted">comment deleted</p>
+                ) : (
+                  e.comment && (
+                    <div>
+                      <p className="timeline__comment">{e.comment}</p>
+                      <div className="timeline__comment-foot">
+                        {e.editedAt && <span className="timeline__edited">(edited)</span>}
+                        {e.type === "COMMENTED" && e.userId === currentUserId && (
+                          <CommentActions
+                            eventId={e.id}
+                            taskId={taskId}
+                            slug={slug}
+                            initial={e.comment ?? ""}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  )
+                )}
               </div>
             </div>
           </li>

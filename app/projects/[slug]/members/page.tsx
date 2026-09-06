@@ -8,6 +8,7 @@ import { prisma } from "@/lib/db/prisma";
 import { getProjectMembership } from "@/lib/projects/mutations";
 
 import { AddMemberForm } from "./AddMemberForm";
+import { RemoveMemberButton } from "./RemoveMemberButton";
 
 export default async function MembersPage({ params }: { params: Promise<{ slug: string }> }) {
   const user = await requireUser();
@@ -56,6 +57,9 @@ export default async function MembersPage({ params }: { params: Promise<{ slug: 
                 <span className={`badge${m.role === "OWNER" ? " badge--status-in_progress" : ""}`}>
                   {m.role === "OWNER" ? "Owner" : "Member"}
                 </span>
+                {m.role !== "OWNER" && (
+                  <RemoveMemberButton slug={slug} userId={m.userId} name={m.user.name} />
+                )}
               </li>
             ))}
           </ul>
