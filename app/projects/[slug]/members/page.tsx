@@ -3,11 +3,13 @@ import { notFound } from "next/navigation";
 import Avatar from "@/app/_components/Avatar";
 import { Nav } from "@/app/_components/Nav";
 import { PageHeader } from "@/app/_components/PageHeader";
+import { appOrigin } from "@/lib/auth/google";
 import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { getProjectMembership } from "@/lib/projects/mutations";
 
 import { AddMemberForm } from "./AddMemberForm";
+import { InviteLinkCard } from "./InviteLinkCard";
 import { RemoveMemberButton } from "./RemoveMemberButton";
 
 export default async function MembersPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -63,6 +65,8 @@ export default async function MembersPage({ params }: { params: Promise<{ slug: 
               </li>
             ))}
           </ul>
+
+          <InviteLinkCard slug={slug} url={`${appOrigin()}/invite/${project.inviteToken}`} />
 
           <section className="stack">
             <h2>Add a member</h2>
