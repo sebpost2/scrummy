@@ -923,11 +923,11 @@ textarea.input {
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
-  gap: 48px;
+  gap: var(--space-7);
   align-items: center;
   max-width: 1080px;
   margin: 0 auto;
-  padding: 12vh 24px 10vh;
+  padding: 12vh var(--space-5) 10vh;
   overflow: hidden;
 }
 
@@ -937,9 +937,9 @@ textarea.input {
   inset: 0;
   background-image: linear-gradient(var(--border) 1px, transparent 1px),
     linear-gradient(90deg, var(--border) 1px, transparent 1px);
-  background-size: 32px 32px;
-  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 60% 40%, #000, transparent 75%);
-  mask-image: radial-gradient(ellipse 70% 60% at 60% 40%, #000, transparent 75%);
+  background-size: var(--space-6) var(--space-6);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 60% 40%, black, transparent 75%);
+  mask-image: radial-gradient(ellipse 70% 60% at 60% 40%, black, transparent 75%);
   opacity: 0.5;
   pointer-events: none;
 }
@@ -951,30 +951,30 @@ textarea.input {
 .hero__brand {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   font-weight: 600;
-  font-size: 1.0625rem;
+  font-size: var(--text-md);
   letter-spacing: -0.02em;
-  margin-bottom: 28px;
+  margin-bottom: var(--space-6);
 }
 
 .hero h1 {
-  font-size: clamp(2rem, 4.5vw, 2.75rem);
+  font-size: clamp(1.75rem, 4.5vw, 2.5rem);
   line-height: 1.08;
   letter-spacing: -0.025em;
 }
 
 .hero__sub {
-  margin-top: 16px;
+  margin-top: var(--space-4);
   color: var(--text-muted);
-  font-size: 1.0625rem;
+  font-size: var(--text-md);
   max-width: 42ch;
 }
 
 .hero__cta {
   display: flex;
-  gap: 10px;
-  margin-top: 28px;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
   flex-wrap: wrap;
 }
 
@@ -983,25 +983,25 @@ textarea.input {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-panel);
-  box-shadow: var(--shadow-pop);
-  padding: 14px;
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-3);
 }
 
 .hero__panel-cols {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .hero__col {
   background: var(--surface-sunken);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
-  padding: 8px;
+  padding: var(--space-2);
 }
 
 .hero__col h4 {
-  margin: 0 0 8px;
+  margin: 0 0 var(--space-2);
   font-size: 0.625rem;
   font-weight: 600;
   color: var(--text-subtle);
@@ -1011,10 +1011,10 @@ textarea.input {
 .hero__chip {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 7px 8px;
-  margin-bottom: 6px;
-  font-size: 0.75rem;
+  border-radius: var(--radius-control);
+  padding: var(--space-2);
+  margin-bottom: var(--space-1);
+  font-size: var(--text-xs);
   border-left: 3px solid var(--border-strong);
 }
 
@@ -1031,18 +1031,18 @@ textarea.input {
 }
 
 .hero__trail {
-  margin-top: 12px;
-  padding-top: 12px;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
   border-top: 1px dashed var(--border);
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: var(--space-2);
 }
 
 .hero__trail-row {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: var(--space-2);
   font-size: 0.6875rem;
   color: var(--text-muted);
 }
