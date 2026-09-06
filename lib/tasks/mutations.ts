@@ -1,7 +1,8 @@
-import type { Task, TaskStatus, TaskPriority } from "@prisma/client";
+import type { Task, TaskStatus, TaskPriority, TaskEventType } from "@prisma/client";
 
 import { prisma } from "@/lib/db/prisma";
 import { getProjectMembership } from "@/lib/projects/mutations";
+import { isNewer } from "@/lib/sync/lww";
 
 async function requireProjectAccess(userId: string, projectId: string): Promise<void> {
   const membership = await getProjectMembership(userId, projectId);
@@ -13,6 +14,14 @@ async function requireTaskAccess(userId: string, taskId: string): Promise<Task> 
   if (!task) throw new Error("TASK_NOT_FOUND");
   await requireProjectAccess(userId, task.projectId);
   return task;
+}
+
+async function latestEventTimestamp(taskId: string, type: TaskEventType): Promise<Date | null> {
+  const event = await prisma.taskEvent.findFirst({
+    where: { taskId, type },
+    orderBy: { clientTimestamp: "desc" },
+  });
+  return event?.clientTimestamp ?? null;
 }
 
 export async function createTask(
@@ -76,20 +85,46 @@ export async function deleteTask(userId: string, taskId: string): Promise<void> 
   await prisma.task.delete({ where: { id: taskId } });
 }
 
-export async function updateTaskStatus(userId: string, taskId: string, status: TaskStatus): Promise<Task> {
+export async function updateTaskStatus(
+  userId: string,
+  taskId: string,
+  status: TaskStatus,
+  clientTimestamp: Date = new Date(),
+): Promise<Task> {
   const task = await requireTaskAccess(userId, taskId);
   if (task.status === status) return task;
+
+  const current = await latestEventTimestamp(taskId, "STATUS_CHANGED");
+  if (!isNewer(clientTimestamp, current)) {
+    await prisma.taskEvent.create({
+      data: {
+        taskId,
+        userId,
+        type: "STATUS_CHANGED",
+        oldValue: task.status,
+        newValue: status,
+        clientTimestamp,
+        comment: "overwritten by a newer edit made elsewhere",
+      },
+    });
+    return task;
+  }
 
   return prisma.$transaction(async (tx) => {
     const updated = await tx.task.update({ where: { id: taskId }, data: { status } });
     await tx.taskEvent.create({
-      data: { taskId, userId, type: "STATUS_CHANGED", oldValue: task.status, newValue: status },
+      data: { taskId, userId, type: "STATUS_CHANGED", oldValue: task.status, newValue: status, clientTimestamp },
     });
     return updated;
   });
 }
 
-export async function reassignTask(userId: string, taskId: string, assigneeId: string | null): Promise<Task> {
+export async function reassignTask(
+  userId: string,
+  taskId: string,
+  assigneeId: string | null,
+  clientTimestamp: Date = new Date(),
+): Promise<Task> {
   const task = await requireTaskAccess(userId, taskId);
   if (assigneeId) {
     const assigneeMembership = await getProjectMembership(assigneeId, task.projectId);
@@ -97,60 +132,133 @@ export async function reassignTask(userId: string, taskId: string, assigneeId: s
   }
   if (task.assigneeId === assigneeId) return task;
 
-  return prisma.$transaction(async (tx) => {
-    const updated = await tx.task.update({ where: { id: taskId }, data: { assigneeId } });
-    await tx.taskEvent.create({
+  const current = await latestEventTimestamp(taskId, "REASSIGNED");
+  if (!isNewer(clientTimestamp, current)) {
+    await prisma.taskEvent.create({
       data: {
         taskId,
         userId,
         type: "REASSIGNED",
         oldValue: task.assigneeId,
         newValue: assigneeId,
+        clientTimestamp,
+        comment: "overwritten by a newer edit made elsewhere",
       },
+    });
+    return task;
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.task.update({ where: { id: taskId }, data: { assigneeId } });
+    await tx.taskEvent.create({
+      data: { taskId, userId, type: "REASSIGNED", oldValue: task.assigneeId, newValue: assigneeId, clientTimestamp },
     });
     return updated;
   });
 }
 
-export async function updateTaskPriority(userId: string, taskId: string, priority: TaskPriority): Promise<Task> {
+export async function updateTaskPriority(
+  userId: string,
+  taskId: string,
+  priority: TaskPriority,
+  clientTimestamp: Date = new Date(),
+): Promise<Task> {
   const task = await requireTaskAccess(userId, taskId);
   if (task.priority === priority) return task;
+
+  const current = await latestEventTimestamp(taskId, "PRIORITY_CHANGED");
+  if (!isNewer(clientTimestamp, current)) {
+    await prisma.taskEvent.create({
+      data: {
+        taskId,
+        userId,
+        type: "PRIORITY_CHANGED",
+        oldValue: task.priority,
+        newValue: priority,
+        clientTimestamp,
+        comment: "overwritten by a newer edit made elsewhere",
+      },
+    });
+    return task;
+  }
 
   return prisma.$transaction(async (tx) => {
     const updated = await tx.task.update({ where: { id: taskId }, data: { priority } });
     await tx.taskEvent.create({
-      data: { taskId, userId, type: "PRIORITY_CHANGED", oldValue: task.priority, newValue: priority },
+      data: { taskId, userId, type: "PRIORITY_CHANGED", oldValue: task.priority, newValue: priority, clientTimestamp },
     });
     return updated;
   });
 }
 
-export async function updateTaskDueDate(userId: string, taskId: string, dueDate: Date | null): Promise<Task> {
+export async function updateTaskDueDate(
+  userId: string,
+  taskId: string,
+  dueDate: Date | null,
+  clientTimestamp: Date = new Date(),
+): Promise<Task> {
   const task = await requireTaskAccess(userId, taskId);
   const oldValue = task.dueDate?.toISOString() ?? null;
   const newValue = dueDate?.toISOString() ?? null;
   if (oldValue === newValue) return task;
 
+  const current = await latestEventTimestamp(taskId, "DUE_DATE_CHANGED");
+  if (!isNewer(clientTimestamp, current)) {
+    await prisma.taskEvent.create({
+      data: {
+        taskId,
+        userId,
+        type: "DUE_DATE_CHANGED",
+        oldValue,
+        newValue,
+        clientTimestamp,
+        comment: "overwritten by a newer edit made elsewhere",
+      },
+    });
+    return task;
+  }
+
   return prisma.$transaction(async (tx) => {
     const updated = await tx.task.update({ where: { id: taskId }, data: { dueDate } });
     await tx.taskEvent.create({
-      data: { taskId, userId, type: "DUE_DATE_CHANGED", oldValue, newValue },
+      data: { taskId, userId, type: "DUE_DATE_CHANGED", oldValue, newValue, clientTimestamp },
     });
     return updated;
   });
 }
 
-export async function updateTaskLabels(userId: string, taskId: string, labels: string[]): Promise<Task> {
+export async function updateTaskLabels(
+  userId: string,
+  taskId: string,
+  labels: string[],
+  clientTimestamp: Date = new Date(),
+): Promise<Task> {
   const task = await requireTaskAccess(userId, taskId);
   const cleaned = labels.map((l) => l.trim()).filter(Boolean);
   const oldValue = task.labels.join(",");
   const newValue = cleaned.join(",");
   if (oldValue === newValue) return task;
 
+  const current = await latestEventTimestamp(taskId, "LABELS_CHANGED");
+  if (!isNewer(clientTimestamp, current)) {
+    await prisma.taskEvent.create({
+      data: {
+        taskId,
+        userId,
+        type: "LABELS_CHANGED",
+        oldValue,
+        newValue,
+        clientTimestamp,
+        comment: "overwritten by a newer edit made elsewhere",
+      },
+    });
+    return task;
+  }
+
   return prisma.$transaction(async (tx) => {
     const updated = await tx.task.update({ where: { id: taskId }, data: { labels: cleaned } });
     await tx.taskEvent.create({
-      data: { taskId, userId, type: "LABELS_CHANGED", oldValue, newValue },
+      data: { taskId, userId, type: "LABELS_CHANGED", oldValue, newValue, clientTimestamp },
     });
     return updated;
   });

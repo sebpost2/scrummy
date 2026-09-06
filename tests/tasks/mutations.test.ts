@@ -91,6 +91,37 @@ describe("updateTaskStatus", () => {
   });
 });
 
+describe("updateTaskStatus — offline LWW", () => {
+  it("applies a status change with a newer clientTimestamp", async () => {
+    const { owner, project } = await setup();
+    const task = await createTask(owner.id, project.id, { title: "LWW task" });
+    const later = new Date(Date.now() + 60_000);
+
+    const updated = await updateTaskStatus(owner.id, task.id, "IN_PROGRESS", later);
+
+    expect(updated.status).toBe("IN_PROGRESS");
+  });
+
+  it("drops a status change with an older clientTimestamp than the last one applied, but logs it", async () => {
+    const { owner, project } = await setup();
+    const task = await createTask(owner.id, project.id, { title: "LWW task 2" });
+    const now = new Date();
+    const earlier = new Date(now.getTime() - 60_000);
+
+    await updateTaskStatus(owner.id, task.id, "IN_PROGRESS", now);
+    const result = await updateTaskStatus(owner.id, task.id, "DONE", earlier);
+
+    expect(result.status).toBe("IN_PROGRESS");
+    const events = await prisma.taskEvent.findMany({
+      where: { taskId: task.id, type: "STATUS_CHANGED" },
+      orderBy: { clientTimestamp: "desc" },
+    });
+    expect(events).toHaveLength(2);
+    expect(events[1].newValue).toBe("DONE");
+    expect(events[1].comment).toBe("overwritten by a newer edit made elsewhere");
+  });
+});
+
 describe("reassignTask", () => {
   it("assigns a member and records a REASSIGNED event", async () => {
     const { owner, project, outsider } = await setup();
