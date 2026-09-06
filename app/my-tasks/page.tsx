@@ -1,7 +1,7 @@
 import { Nav } from "@/app/_components/Nav";
 import { PageHeader } from "@/app/_components/PageHeader";
 import { EmptyState } from "@/app/_components/EmptyState";
-import { TaskCard } from "@/app/_components/TaskCard";
+import { TaskRow } from "@/app/_components/TaskCard";
 import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { getMyTasks } from "@/lib/tasks/queries";
@@ -40,18 +40,20 @@ export default async function MyTasksPage() {
             />
           ) : (
             [...byProject.values()].map((group) => (
-              <section key={group.slug} className="stack">
-                <h2>{group.name}</h2>
-                {group.tasks.map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    href={`/projects/${group.slug}/tasks/${task.id}`}
-                    title={task.title}
-                    priority={task.priority}
-                    status={task.status}
-                    dueDate={task.dueDate}
-                  />
-                ))}
+              <section key={group.slug} className="tasklist">
+                <h2 className="tasklist__project">{group.name}</h2>
+                <div className="tasklist__rows">
+                  {group.tasks.map((task) => (
+                    <TaskRow
+                      key={task.id}
+                      href={`/projects/${group.slug}/tasks/${task.id}`}
+                      title={task.title}
+                      status={task.status}
+                      priority={task.priority}
+                      dueDate={task.dueDate}
+                    />
+                  ))}
+                </div>
               </section>
             ))
           )}

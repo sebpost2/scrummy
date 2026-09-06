@@ -1222,3 +1222,20 @@ textarea.input {
   .detail { grid-template-columns: 1fr; }
   .detail__side { position: static; }
 }
+
+/* ============================================================
+   My tasks — grouped compact rows
+   ============================================================ */
+.tasklist { display: flex; flex-direction: column; gap: var(--space-2); }
+.tasklist__project { font-size: var(--text-sm); color: var(--text-muted); }
+.tasklist__rows { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: var(--radius-card); overflow: hidden; }
+.taskrow { display: flex; align-items: center; gap: var(--space-3); padding: 10px var(--space-3); background: var(--surface); color: inherit; }
+.taskrow + .taskrow { border-top: 1px solid var(--border-subtle); }
+.taskrow:hover { background: var(--surface-hover); }
+.taskrow__dot { width: 8px; height: 8px; border-radius: 999px; flex: none; background: var(--status-todo); }
+.taskrow__dot--in_progress { background: var(--status-progress); }
+.taskrow__dot--done { background: var(--status-done); }
+.taskrow__title { font-size: var(--text-base); font-weight: 500; }
+.taskrow__project { color: var(--text-subtle); font-size: var(--text-xs); }
+.taskrow__due { margin-left: auto; font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text-subtle); }
+.taskrow__due--overdue { color: var(--danger); }
