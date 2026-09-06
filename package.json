@@ -15,6 +15,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
+    "idb-keyval": "^6.3.0",
     "lucide-react": "^1.41.0",
     "next": "^16.3.1",
     "pg": "^8.22.0",
@@ -31,6 +32,7 @@
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.12",
+    "fake-indexeddb": "^6.2.5",
     "typescript": "^5",
     "vitest": "^4.1.10"
   }
