@@ -27,7 +27,7 @@ async function latestEventTimestamp(taskId: string, type: TaskEventType): Promis
 export async function createTask(
   userId: string,
   projectId: string,
-  input: { title: string; description?: string },
+  input: { title: string; description?: string; id?: string; rank?: number },
 ): Promise<Task> {
   await requireProjectAccess(userId, projectId);
   const title = input.title.trim();
@@ -36,21 +36,31 @@ export async function createTask(
   return prisma.$transaction(async (tx) => {
     const task = await tx.task.create({
       data: {
+        id: input.id,
         projectId,
         title,
         description: input.description,
         createdById: userId,
-        rank: Date.now() / 1000,
+        rank: input.rank ?? Date.now() / 1000,
       },
     });
-    await tx.taskEvent.create({ data: { taskId: task.id, userId, type: "CREATED" } });
+    await tx.taskEvent.create({
+      data: { taskId: task.id, userId, type: "CREATED", clientTimestamp: new Date() },
+    });
     return task;
   });
 }
 
-export async function reorderTask(userId: string, taskId: string, rank: number): Promise<Task> {
-  await requireTaskAccess(userId, taskId);
-  return prisma.task.update({ where: { id: taskId }, data: { rank } });
+export async function reorderTask(
+  userId: string,
+  taskId: string,
+  rank: number,
+  clientTimestamp: Date = new Date(),
+): Promise<Task> {
+  const task = await requireTaskAccess(userId, taskId);
+  if (!isNewer(clientTimestamp, task.rankUpdatedAt)) return task;
+
+  return prisma.task.update({ where: { id: taskId }, data: { rank, rankUpdatedAt: clientTimestamp } });
 }
 
 export async function updateTaskTitle(userId: string, taskId: string, title: string): Promise<Task> {

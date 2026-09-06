@@ -375,3 +375,40 @@ describe("subtasks", () => {
     await expect(addSubtask(owner.id, task.id, "   ")).rejects.toThrow("SUBTASK_TITLE_REQUIRED");
   });
 });
+
+describe("reorderTask — offline LWW", () => {
+  it("applies a reorder with a newer clientTimestamp", async () => {
+    const { owner, project } = await setup();
+    const task = await createTask(owner.id, project.id, { title: "Reorder task" });
+    const later = new Date(Date.now() + 60_000);
+
+    const updated = await reorderTask(owner.id, task.id, 5, later);
+
+    expect(updated.rank).toBe(5);
+    expect(updated.rankUpdatedAt?.getTime()).toBe(later.getTime());
+  });
+
+  it("drops a reorder with an older clientTimestamp than the last one applied", async () => {
+    const { owner, project } = await setup();
+    const task = await createTask(owner.id, project.id, { title: "Reorder task 2" });
+    const now = new Date();
+    const earlier = new Date(now.getTime() - 60_000);
+
+    await reorderTask(owner.id, task.id, 5, now);
+    const result = await reorderTask(owner.id, task.id, 9, earlier);
+
+    expect(result.rank).toBe(5);
+  });
+});
+
+describe("createTask — client-supplied id and rank", () => {
+  it("uses a client-supplied id and rank when given (for offline-created tasks)", async () => {
+    const { owner, project } = await setup();
+    const clientId = `client-${Date.now()}`;
+
+    const task = await createTask(owner.id, project.id, { title: "Offline task", id: clientId, rank: 42 });
+
+    expect(task.id).toBe(clientId);
+    expect(task.rank).toBe(42);
+  });
+});
