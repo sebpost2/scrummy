@@ -1230,7 +1230,7 @@ textarea.input {
     scroll-snap-type: x mandatory;
     gap: var(--space-3);
     margin: 0 calc(var(--space-3) * -1);
-    padding: 0 var(--space-3) var(--space-2);
+    padding: 0 var(--space-3) 200px;
     -webkit-overflow-scrolling: touch;
   }
 
