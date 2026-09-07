@@ -29,11 +29,15 @@ export default async function BoardPage({
   const { slug } = await params;
   const query = await searchParams;
 
-  const project = await prisma.project.findUnique({ where: { slug } });
+  const [project, navProjects] = await Promise.all([
+    prisma.project.findUnique({ where: { slug } }),
+    prisma.projectMember.findMany({
+      where: { userId: user.id },
+      include: { project: true },
+      orderBy: { project: { createdAt: "desc" } },
+    }),
+  ]);
   if (!project) notFound();
-
-  const membership = await getProjectMembership(user.id, project.id);
-  if (!membership) notFound();
 
   const filters: BoardFilters = {
     assigneeId: query.assignee || undefined,
@@ -42,13 +46,12 @@ export default async function BoardPage({
     status: (query.status as TaskStatus) || undefined,
     q: query.q?.trim() || undefined,
   };
-  const tasks = await getBoardTasks(project.id, filters);
-  const members = await prisma.projectMember.findMany({ where: { projectId: project.id }, include: { user: true } });
-  const navProjects = await prisma.projectMember.findMany({
-    where: { userId: user.id },
-    include: { project: true },
-    orderBy: { project: { createdAt: "desc" } },
-  });
+  const [membership, tasks, members] = await Promise.all([
+    getProjectMembership(user.id, project.id),
+    getBoardTasks(project.id, filters),
+    prisma.projectMember.findMany({ where: { projectId: project.id }, include: { user: true } }),
+  ]);
+  if (!membership) notFound();
 
   const boardTasks: BoardTask[] = tasks.map((t) => ({
     id: t.id,

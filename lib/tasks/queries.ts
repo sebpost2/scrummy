@@ -10,6 +10,13 @@ export type BoardFilters = {
   q?: string;
 };
 
+// Safety ceilings so one huge project/task can't pull an unbounded row set into
+// memory and the render. Add real "load more" pagination if a project ever
+// legitimately crosses these.
+const MAX_BOARD_TASKS = 1000;
+const MAX_MY_TASKS = 300;
+const MAX_EVENTS = 200;
+
 export function getBoardTasks(projectId: string, filters: BoardFilters) {
   return prisma.task.findMany({
     where: {
@@ -22,6 +29,7 @@ export function getBoardTasks(projectId: string, filters: BoardFilters) {
     },
     include: { assignee: true, subtasks: { select: { done: true } } },
     orderBy: [{ rank: "asc" }, { createdAt: "asc" }],
+    take: MAX_BOARD_TASKS,
   });
 }
 
@@ -30,6 +38,7 @@ export function getMyTasks(userId: string) {
     where: { assigneeId: userId },
     include: { project: true },
     orderBy: [{ dueDate: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
+    take: MAX_MY_TASKS,
   });
 }
 
@@ -39,7 +48,7 @@ export function getTaskWithEvents(taskId: string) {
     include: {
       assignee: true,
       project: { include: { members: { include: { user: true } } } },
-      events: { include: { user: true }, orderBy: { createdAt: "desc" } },
+      events: { include: { user: true }, orderBy: { createdAt: "desc" }, take: MAX_EVENTS },
       subtasks: { orderBy: { createdAt: "asc" } },
     },
   });

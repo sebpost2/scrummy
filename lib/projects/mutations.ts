@@ -6,6 +6,8 @@ import { prisma } from "@/lib/db/prisma";
 
 type Result = { ok: true } | { ok: false; message: string };
 
+const MAX_NAME = 200;
+
 function ownerCount(projectId: string): Promise<number> {
   return prisma.projectMember.count({ where: { projectId, role: "OWNER" } });
 }
@@ -20,6 +22,7 @@ function slugify(name: string): string {
 }
 
 export async function createProject(userId: string, name: string, id?: string): Promise<Project> {
+  if (name.trim().length > MAX_NAME) throw new Error("NAME_TOO_LONG");
   const slug = `${slugify(name)}-${randomBytes(3).toString("hex")}`;
   const inviteToken = randomBytes(16).toString("hex");
   return prisma.$transaction(async (tx) => {
@@ -120,6 +123,7 @@ export async function renameProject(userId: string, projectId: string, name: str
   }
   const trimmed = name.trim();
   if (!trimmed) return { ok: false, message: "Project name is required." };
+  if (trimmed.length > MAX_NAME) return { ok: false, message: "Project name is too long." };
 
   await prisma.project.update({ where: { id: projectId }, data: { name: trimmed } });
   return { ok: true };

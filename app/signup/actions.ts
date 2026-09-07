@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db/prisma";
 import { hashPassword } from "@/lib/crypto/password";
 import { createSession } from "@/lib/auth/session";
+import { allow } from "@/lib/auth/rateLimit";
 import { joinProjectByInviteToken } from "@/lib/projects/mutations";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -23,6 +24,10 @@ export async function createAccount(_prev: SignupState, formData: FormData): Pro
 
   if (!EMAIL_RE.test(email) || password.length < 8 || password !== confirmPassword || !name) {
     return { status: "error", message: GENERIC_ERROR };
+  }
+
+  if (!(await allow("signup", 5, 600_000))) {
+    return { status: "error", message: "Too many attempts. Wait a few minutes and try again." };
   }
 
   const passwordHash = await hashPassword(password);

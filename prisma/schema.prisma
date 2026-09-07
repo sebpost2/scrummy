@@ -97,6 +97,7 @@ model Task {
   subtasks Subtask[]
 
   @@index([projectId, status])
+  @@index([projectId, rank])
   @@index([assigneeId])
 }
 

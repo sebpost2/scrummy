@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db/prisma";
 import { verifyPassword } from "@/lib/crypto/password";
 import { createSession, destroySession } from "@/lib/auth/session";
+import { allow } from "@/lib/auth/rateLimit";
 import { joinProjectByInviteToken } from "@/lib/projects/mutations";
 
 export type LoginState = { status: "idle" } | { status: "error"; message: string };
@@ -12,6 +13,7 @@ export type LoginState = { status: "idle" } | { status: "error"; message: string
 // One message for every failure — a distinct message would let anyone probe
 // which emails have accounts.
 const GENERIC_ERROR = "Incorrect email or password.";
+const THROTTLED_ERROR = "Too many attempts. Wait a minute and try again.";
 
 // Same shape as a real hashPassword() output so verifyPassword() always runs
 // one real scrypt computation, whether or not the account exists — without
@@ -22,6 +24,10 @@ const DUMMY_HASH = `${"0".repeat(32)}.${"0".repeat(128)}`;
 export async function login(_prev: LoginState, formData: FormData): Promise<LoginState> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
+
+  if (!(await allow("login", 8, 60_000, email))) {
+    return { status: "error", message: THROTTLED_ERROR };
+  }
 
   const user = await prisma.user.findUnique({ where: { email } });
   const passwordOk = await verifyPassword(password, user?.passwordHash ?? DUMMY_HASH);

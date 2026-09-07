@@ -4,6 +4,17 @@ import { prisma } from "@/lib/db/prisma";
 import { getProjectMembership } from "@/lib/projects/mutations";
 import { isNewer } from "@/lib/sync/lww";
 
+// Upper bounds on free-text input, enforced server-side so a crafted request
+// can't store a multi-megabyte field. Generous vs. any real use.
+const LIMITS = {
+  title: 500,
+  description: 20_000,
+  comment: 10_000,
+  labelCount: 50,
+  labelLen: 100,
+  subtaskTitle: 500,
+} as const;
+
 async function requireProjectAccess(userId: string, projectId: string): Promise<void> {
   const membership = await getProjectMembership(userId, projectId);
   if (!membership) throw new Error("NOT_A_MEMBER");
@@ -32,6 +43,10 @@ export async function createTask(
   await requireProjectAccess(userId, projectId);
   const title = input.title.trim();
   if (!title) throw new Error("TITLE_REQUIRED");
+  if (title.length > LIMITS.title) throw new Error("TITLE_TOO_LONG");
+  if (input.description && input.description.length > LIMITS.description) {
+    throw new Error("DESCRIPTION_TOO_LONG");
+  }
 
   return prisma.$transaction(async (tx) => {
     const task = await tx.task.create({
@@ -67,6 +82,7 @@ export async function updateTaskTitle(userId: string, taskId: string, title: str
   const task = await requireTaskAccess(userId, taskId);
   const trimmed = title.trim();
   if (!trimmed) throw new Error("TITLE_REQUIRED");
+  if (trimmed.length > LIMITS.title) throw new Error("TITLE_TOO_LONG");
   if (task.title === trimmed) return task;
 
   return prisma.$transaction(async (tx) => {
@@ -81,6 +97,7 @@ export async function updateTaskTitle(userId: string, taskId: string, title: str
 export async function updateTaskDescription(userId: string, taskId: string, description: string): Promise<Task> {
   const task = await requireTaskAccess(userId, taskId);
   const next = description.trim() || null;
+  if (next && next.length > LIMITS.description) throw new Error("DESCRIPTION_TOO_LONG");
   if ((task.description ?? null) === next) return task;
 
   return prisma.$transaction(async (tx) => {
@@ -245,6 +262,9 @@ export async function updateTaskLabels(
 ): Promise<Task> {
   const task = await requireTaskAccess(userId, taskId);
   const cleaned = labels.map((l) => l.trim()).filter(Boolean);
+  if (cleaned.length > LIMITS.labelCount || cleaned.some((l) => l.length > LIMITS.labelLen)) {
+    throw new Error("TOO_MANY_LABELS");
+  }
   const oldValue = task.labels.join(",");
   const newValue = cleaned.join(",");
   if (oldValue === newValue) return task;
@@ -278,6 +298,7 @@ export async function addTaskComment(userId: string, taskId: string, comment: st
   const task = await requireTaskAccess(userId, taskId);
   const trimmed = comment.trim();
   if (!trimmed) throw new Error("COMMENT_REQUIRED");
+  if (trimmed.length > LIMITS.comment) throw new Error("COMMENT_TOO_LONG");
 
   await prisma.taskEvent.create({
     data: { taskId, userId, type: "COMMENTED", comment: trimmed },
@@ -298,6 +319,7 @@ export async function editTaskComment(userId: string, eventId: string, comment: 
   if (event.deletedAt) throw new Error("COMMENT_DELETED");
   const trimmed = comment.trim();
   if (!trimmed) throw new Error("COMMENT_REQUIRED");
+  if (trimmed.length > LIMITS.comment) throw new Error("COMMENT_TOO_LONG");
   if (trimmed === event.comment) return;
 
   await prisma.taskEvent.update({
@@ -327,6 +349,7 @@ export async function addSubtask(userId: string, taskId: string, title: string) 
   await requireTaskAccess(userId, taskId);
   const trimmed = title.trim();
   if (!trimmed) throw new Error("SUBTASK_TITLE_REQUIRED");
+  if (trimmed.length > LIMITS.subtaskTitle) throw new Error("SUBTASK_TITLE_TOO_LONG");
   return prisma.subtask.create({ data: { taskId, title: trimmed } });
 }
 

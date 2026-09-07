@@ -25,8 +25,23 @@ export async function issueSessionToken(
   return { token, expiresAt };
 }
 
+// SyncedMutation rows only exist to dedup replays of the same offline mutation.
+// An offline client that comes back after this long has bigger problems, and
+// keeping the row forever just grows the table without bound.
+const SYNCED_MUTATION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
 export async function createSession(userId: string): Promise<void> {
   const { token } = await issueSessionToken(prisma, userId);
+
+  // Opportunistic GC — cheap at this scale, keeps Session/SyncedMutation from
+  // growing without bound. Best-effort: a failure here must not fail login.
+  // ponytail: move to a scheduled job if login latency ever bites.
+  const now = Date.now();
+  void prisma.session.deleteMany({ where: { expiresAt: { lt: new Date(now) } } }).catch(() => {});
+  void prisma.syncedMutation
+    .deleteMany({ where: { appliedAt: { lt: new Date(now - SYNCED_MUTATION_TTL_MS) } } })
+    .catch(() => {});
+
   const store = await cookies();
   store.set(SESSION_COOKIE, token, {
     httpOnly: true,
