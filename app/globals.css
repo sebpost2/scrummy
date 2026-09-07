@@ -1227,10 +1227,6 @@ textarea.input {
   .nav__project {
     max-width: 96px;
   }
-
-  .install-prompt {
-    bottom: calc(64px + var(--space-3));
-  }
 }
 
 .mobile-nav {
@@ -1397,6 +1393,12 @@ textarea.input {
   border-radius: var(--radius-panel);
   box-shadow: var(--shadow-lg);
   padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+}
+
+@media (max-width: 720px) {
+  .install-prompt {
+    bottom: calc(64px + var(--space-3));
+  }
 }
 
 .install-prompt__text {
