@@ -595,7 +595,7 @@ textarea.input {
   position: relative;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-card);
+  border-radius: var(--radius-data);
   padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
   box-shadow: var(--shadow-sm);
   cursor: grab;
@@ -979,7 +979,7 @@ textarea.input {
 .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-3); }
 .project-card {
   display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-4);
-  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card);
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-data);
   color: inherit; box-shadow: var(--shadow-sm);
   transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
 }
@@ -996,7 +996,7 @@ textarea.input {
 /* ============================================================
    Member list
    ============================================================ */
-.member-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--border); border-radius: var(--radius-card); overflow: hidden; }
+.member-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--border); border-radius: var(--radius-data); overflow: hidden; }
 .member-list__item { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); background: var(--surface); }
 .member-list__item + .member-list__item { border-top: 1px solid var(--border-subtle); }
 .member-list__id { display: flex; flex-direction: column; }
@@ -1099,7 +1099,7 @@ textarea.input {
 .hero__chip {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-control);
+  border-radius: var(--radius-data);
   padding: var(--space-2);
   margin-bottom: var(--space-1);
   font-size: var(--text-xs);
@@ -1287,7 +1287,7 @@ textarea.input {
    ============================================================ */
 .tasklist { display: flex; flex-direction: column; gap: var(--space-2); }
 .tasklist__project { font-size: var(--text-sm); color: var(--text-muted); }
-.tasklist__rows { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: var(--radius-card); overflow: hidden; }
+.tasklist__rows { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: var(--radius-data); overflow: hidden; }
 .taskrow { display: flex; align-items: center; gap: var(--space-3); padding: 10px var(--space-3); background: var(--surface); color: inherit; }
 .taskrow + .taskrow { border-top: 1px solid var(--border-subtle); }
 .taskrow:hover { background: var(--surface-hover); }
