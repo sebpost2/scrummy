@@ -43,4 +43,11 @@ describe("outbox", () => {
 
     expect(await listPending()).toHaveLength(0);
   });
+
+  it("handles concurrent removes without resurrecting items", async () => {
+    await enqueue({ id: "a", type: "updateTaskStatus", args: [], clientTimestamp: 1, entityId: "t1" });
+    await enqueue({ id: "b", type: "updateTaskStatus", args: [], clientTimestamp: 2, entityId: "t1" });
+    await Promise.all(["a", "b"].map(remove));
+    expect(await listPending()).toHaveLength(0);
+  });
 });
