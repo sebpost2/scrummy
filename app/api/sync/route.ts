@@ -8,6 +8,7 @@ import type { OutboxMutationType } from "@/lib/sync/types";
 const PERMANENT_ERROR_CODES = new Set([
   "NOT_A_MEMBER",
   "TASK_NOT_FOUND",
+  "PROJECT_NOT_FOUND",
   "TITLE_REQUIRED",
   "ASSIGNEE_NOT_A_MEMBER",
   "COMMENT_REQUIRED",

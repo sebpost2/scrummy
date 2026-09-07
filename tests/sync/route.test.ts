@@ -133,6 +133,58 @@ describe("POST /api/sync", () => {
     expect(afterClear?.dueDate).toBeNull();
   });
 
+  it("resolves a project slug to id and applies removeProjectMember", async () => {
+    const owner = await prisma.user.create({
+      data: { email: `sync-owner5-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
+    });
+    ownerId = owner.id;
+    const member = await prisma.user.create({
+      data: { email: `sync-member-${Date.now()}@example.com`, passwordHash: "x", name: "Member" },
+    });
+    outsiderId = member.id;
+    vi.mocked(getSessionUser).mockResolvedValue(owner);
+    const project = await createProject(owner.id, "Sync Project 5");
+    projectId = project.id;
+    await prisma.projectMember.create({ data: { userId: member.id, projectId: project.id, role: "MEMBER" } });
+
+    const res = await POST(
+      request({
+        id: `mut-${Date.now()}`,
+        type: "removeProjectMember",
+        args: [project.slug, member.id],
+        clientTimestamp: Date.now(),
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    const membership = await prisma.projectMember.findUnique({
+      where: { userId_projectId: { userId: member.id, projectId: project.id } },
+    });
+    expect(membership).toBeNull();
+  });
+
+  it("buckets an unresolvable project slug as permanent, not transient", async () => {
+    const owner = await prisma.user.create({
+      data: { email: `sync-owner6-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
+    });
+    ownerId = owner.id;
+    vi.mocked(getSessionUser).mockResolvedValue(owner);
+
+    const res = await POST(
+      request({
+        id: `mut-${Date.now()}`,
+        type: "regenerateInviteToken",
+        args: ["no-such-project-slug"],
+        clientTimestamp: Date.now(),
+      }),
+    );
+
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.permanent).toBe(true);
+    expect(json.error).toBe("PROJECT_NOT_FOUND");
+  });
+
   it("returns 400 for an unknown mutation type", async () => {
     const owner = await prisma.user.create({
       data: { email: `sync-owner3-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },

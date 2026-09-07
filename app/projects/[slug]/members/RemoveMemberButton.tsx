@@ -29,7 +29,7 @@ export function RemoveMemberButton({
         start(async () => {
           const res = await callAction(() => removeMemberAction(slug, userId), {
             type: "removeProjectMember",
-            args: [userId],
+            args: [slug, userId],
             entityId: userId,
           });
           if (res === undefined) {

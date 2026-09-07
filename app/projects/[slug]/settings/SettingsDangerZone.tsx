@@ -30,7 +30,7 @@ export function SettingsDangerZone({
             start(async () => {
               const res = await callAction(() => leaveProjectAction(slug), {
                 type: "leaveProject",
-                args: [],
+                args: [slug],
                 entityId: slug,
               });
               if (res === undefined) {
@@ -55,7 +55,7 @@ export function SettingsDangerZone({
             start(async () => {
               const res = await callAction(() => deleteProjectAction(slug), {
                 type: "deleteProject",
-                args: [],
+                args: [slug],
                 entityId: slug,
               });
               if (res === undefined) {

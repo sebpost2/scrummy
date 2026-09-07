@@ -31,7 +31,7 @@ export function MemberRoleToggle({
         start(async () => {
           const res = await callAction(() => updateMemberRoleAction(slug, userId, next), {
             type: "updateMemberRole",
-            args: [userId, next],
+            args: [slug, userId, next],
             entityId: userId,
           });
           if (res === undefined) {

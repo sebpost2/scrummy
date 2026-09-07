@@ -22,7 +22,7 @@ export function InviteLinkCard({ slug, url }: { slug: string; url: string }) {
     start(async () => {
       const res = await callAction(() => regenerateInviteTokenAction(slug), {
         type: "regenerateInviteToken",
-        args: [],
+        args: [slug],
         entityId: slug,
       });
       if (res === undefined) {

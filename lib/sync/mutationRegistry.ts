@@ -1,5 +1,6 @@
 import type { TaskStatus, TaskPriority, ProjectRole } from "@prisma/client";
 
+import { prisma } from "@/lib/db/prisma";
 import {
   createTask,
   updateTaskTitle,
@@ -32,6 +33,12 @@ import type { OutboxMutationType } from "@/lib/sync/types";
 
 type Handler = (userId: string, args: unknown[], clientTimestamp: Date) => Promise<unknown>;
 
+async function projectIdFor(slug: string): Promise<string> {
+  const project = await prisma.project.findUnique({ where: { slug } });
+  if (!project) throw new Error("PROJECT_NOT_FOUND");
+  return project.id;
+}
+
 export const MUTATION_REGISTRY: Record<OutboxMutationType, Handler> = {
   createTask: (userId, args) =>
     createTask(
@@ -57,11 +64,12 @@ export const MUTATION_REGISTRY: Record<OutboxMutationType, Handler> = {
   deleteSubtask: (userId, args) => deleteSubtask(userId, args[0] as string),
   createProject: (userId, args) => createProject(userId, args[0] as string, args[1] as string | undefined),
   addProjectMemberByEmail: (userId, args) => addProjectMemberByEmail(userId, args[0] as string, args[1] as string),
-  regenerateInviteToken: (userId, args) => regenerateInviteToken(userId, args[0] as string),
-  removeProjectMember: (userId, args) => removeProjectMember(userId, args[0] as string, args[1] as string),
+  regenerateInviteToken: async (userId, args) => regenerateInviteToken(userId, await projectIdFor(args[0] as string)),
+  removeProjectMember: async (userId, args) =>
+    removeProjectMember(userId, await projectIdFor(args[0] as string), args[1] as string),
   renameProject: (userId, args) => renameProject(userId, args[0] as string, args[1] as string),
-  deleteProject: (userId, args) => deleteProject(userId, args[0] as string),
-  leaveProject: (userId, args) => leaveProject(userId, args[0] as string),
-  updateMemberRole: (userId, args) =>
-    updateMemberRole(userId, args[0] as string, args[1] as string, args[2] as ProjectRole),
+  deleteProject: async (userId, args) => deleteProject(userId, await projectIdFor(args[0] as string)),
+  leaveProject: async (userId, args) => leaveProject(userId, await projectIdFor(args[0] as string)),
+  updateMemberRole: async (userId, args) =>
+    updateMemberRole(userId, await projectIdFor(args[0] as string), args[1] as string, args[2] as ProjectRole),
 };
