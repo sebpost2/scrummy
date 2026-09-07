@@ -1,4 +1,11 @@
 import type { NextConfig } from "next";
+import withSerwistInit from "@serwist/next";
+
+const withSerwist = withSerwistInit({
+  swSrc: "app/sw.ts",
+  swDest: "public/sw.js",
+  cacheOnNavigation: true,
+});
 
 const nextConfig: NextConfig = {
   async headers() {
@@ -16,6 +23,10 @@ const nextConfig: NextConfig = {
             // hydration relies on inline scripts and there's no nonce plumbing
             // here — upgrade to a nonce-based policy if a future feature ever
             // renders untrusted content as markup.
+            //
+            // No changes needed for the service worker or /api/sync: worker-src
+            // and manifest-src both fall back to default-src 'self', and the
+            // sync route is same-origin under connect-src 'self'.
             value:
               "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
           },
@@ -25,4 +36,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSerwist(nextConfig);
