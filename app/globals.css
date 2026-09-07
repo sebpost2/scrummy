@@ -1217,7 +1217,7 @@ textarea.input {
   }
 
   .container {
-    padding: 24px 16px 80px;
+    padding: 24px 16px calc(72px + var(--space-6));
   }
 
   .nav__links .nav__link {
@@ -1227,6 +1227,44 @@ textarea.input {
   .nav__project {
     max-width: 96px;
   }
+
+  .install-prompt {
+    bottom: calc(64px + var(--space-3));
+  }
+}
+
+.mobile-nav {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .mobile-nav {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 25;
+    height: 64px;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--bg-elevated);
+    border-top: 1px solid var(--border);
+  }
+}
+
+.mobile-nav__link {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.mobile-nav__link:hover {
+  color: var(--text);
 }
 
 @media (prefers-reduced-motion: reduce) {
