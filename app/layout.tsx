@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 
 import "./globals.css";
@@ -19,9 +19,20 @@ const plexMono = IBM_Plex_Mono({
   variable: "--font-plex-mono",
 });
 
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#3559e0" },
+    { media: "(prefers-color-scheme: dark)", color: "#5b82ff" },
+  ],
+};
+
 export const metadata: Metadata = {
   title: "Scrummy",
   description: "A small task tracker with traceability.",
+  appleWebApp: {
+    title: "Scrummy",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
