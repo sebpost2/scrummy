@@ -121,6 +121,7 @@ function CardShell({
         </span>
       )}
       <Link href={`/projects/${slug}/tasks/${task.id}`} className="card__link">
+        <span className="card__id">#{task.id.slice(-4).toUpperCase()}</span>
         <span className="card__title">{task.title}</span>
       </Link>
       <div className="card__meta">
