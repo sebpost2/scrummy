@@ -47,6 +47,21 @@ export async function markStatus(id: string, status: OutboxStatus, failureMessag
   });
 }
 
+/** Counts one transient failure against an item (it stays pending). Returns the new count. */
+export async function recordFailedAttempt(id: string): Promise<number> {
+  return serialize(async () => {
+    const items = await readAll();
+    let attempts = 0;
+    const next = items.map((item) => {
+      if (item.id !== id) return item;
+      attempts = (item.attempts ?? 0) + 1;
+      return { ...item, attempts };
+    });
+    await writeAll(next);
+    return attempts;
+  });
+}
+
 export async function remove(id: string): Promise<void> {
   await serialize(async () => {
     const items = await readAll();

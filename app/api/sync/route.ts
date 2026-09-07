@@ -32,11 +32,21 @@ export async function POST(request: Request): Promise<Response> {
     return NextResponse.json({ error: "UNAUTHENTICATED", permanent: false }, { status: 401 });
   }
 
-  const body = (await request.json()) as SyncRequestBody;
-  const handler = MUTATION_REGISTRY[body.type];
-  if (!handler) {
+  let body: SyncRequestBody;
+  try {
+    const parsed: unknown = await request.json();
+    if (parsed === null || typeof parsed !== "object") throw new Error("INVALID_BODY");
+    body = parsed as SyncRequestBody;
+  } catch {
+    return NextResponse.json({ error: "INVALID_BODY", permanent: true }, { status: 400 });
+  }
+
+  // hasOwn, not a truthiness check: `type: "toString"` would otherwise resolve
+  // an Object.prototype method as a "handler".
+  if (!Object.hasOwn(MUTATION_REGISTRY, body.type)) {
     return NextResponse.json({ error: "UNKNOWN_MUTATION_TYPE", permanent: true }, { status: 400 });
   }
+  const handler = MUTATION_REGISTRY[body.type];
 
   if (await alreadyApplied(body.id)) {
     return NextResponse.json({ ok: true, deduped: true });

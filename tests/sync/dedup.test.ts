@@ -23,4 +23,12 @@ describe("dedup", () => {
 
     expect(await alreadyApplied(mutationId)).toBe(true);
   });
+
+  it("tolerates a racing second markApplied for the same id", async () => {
+    mutationId = `dedup-race-${Date.now()}`;
+
+    await markApplied(mutationId);
+
+    await expect(markApplied(mutationId)).resolves.toBeUndefined();
+  });
 });

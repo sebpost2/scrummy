@@ -1,4 +1,5 @@
 import { describe, it, expect, afterEach, afterAll, vi } from "vitest";
+import type { User } from "@prisma/client";
 
 vi.mock("@/lib/auth/session", async () => {
   const actual = await vi.importActual<typeof import("@/lib/auth/session")>("@/lib/auth/session");
@@ -198,5 +199,23 @@ describe("POST /api/sync", () => {
     );
 
     expect(res.status).toBe(400);
+  });
+
+  it("returns 400 for a malformed body instead of throwing", async () => {
+    vi.mocked(getSessionUser).mockResolvedValue({ id: "u1" } as User);
+
+    const res = await POST(new Request("http://localhost/api/sync", { method: "POST", body: "not json" }));
+
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe("INVALID_BODY");
+  });
+
+  it("does not treat an Object.prototype key as a registered mutation", async () => {
+    vi.mocked(getSessionUser).mockResolvedValue({ id: "u1" } as User);
+
+    const res = await POST(request({ id: "m1", type: "toString", args: [], clientTimestamp: Date.now() }));
+
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe("UNKNOWN_MUTATION_TYPE");
   });
 });

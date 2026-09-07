@@ -34,4 +34,5 @@ export interface OutboxItem {
   entityId: string;
   status: OutboxStatus;
   failureMessage?: string;
+  attempts?: number;
 }
