@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 
 import { toast } from "@/app/_components/toast";
+import { callAction } from "@/lib/sync/callAction";
 
 import { regenerateInviteTokenAction } from "./actions";
 
@@ -19,7 +20,15 @@ export function InviteLinkCard({ slug, url }: { slug: string; url: string }) {
   function regenerate() {
     if (!confirm("Generate a new invite link? The old one will stop working.")) return;
     start(async () => {
-      const res = await regenerateInviteTokenAction(slug);
+      const res = await callAction(() => regenerateInviteTokenAction(slug), {
+        type: "regenerateInviteToken",
+        args: [],
+        entityId: slug,
+      });
+      if (res === undefined) {
+        toast.info("Regenerating once you're back online.");
+        return;
+      }
       if (!res.ok) {
         toast.error(res.message);
         return;

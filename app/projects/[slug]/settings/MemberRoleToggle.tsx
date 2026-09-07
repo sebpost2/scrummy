@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import type { ProjectRole } from "@prisma/client";
 
 import { toast } from "@/app/_components/toast";
+import { callAction } from "@/lib/sync/callAction";
 
 import { updateMemberRoleAction } from "./actions";
 
@@ -28,7 +29,15 @@ export function MemberRoleToggle({
       disabled={pending}
       onClick={() =>
         start(async () => {
-          const res = await updateMemberRoleAction(slug, userId, next);
+          const res = await callAction(() => updateMemberRoleAction(slug, userId, next), {
+            type: "updateMemberRole",
+            args: [userId, next],
+            entityId: userId,
+          });
+          if (res === undefined) {
+            toast.info("Updating once you're back online.");
+            return;
+          }
           if (!res.ok) toast.error(res.message);
           else toast.success(next === "OWNER" ? `${name} is now an owner` : `${name} is now a member`);
         })
