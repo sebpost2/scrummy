@@ -1213,7 +1213,19 @@ textarea.input {
 
 @media (max-width: 720px) {
   .board {
-    grid-template-columns: 1fr;
+    display: flex;
+    grid-template-columns: none;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: var(--space-3);
+    margin: 0 calc(var(--space-3) * -1);
+    padding: 0 var(--space-3) var(--space-2);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .board__column {
+    flex: 0 0 92vw;
+    scroll-snap-align: start;
   }
 
   .container {
