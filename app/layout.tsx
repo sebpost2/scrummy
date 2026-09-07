@@ -5,6 +5,7 @@ import "./globals.css";
 
 import THEME_SCRIPT from "./_components/theme-script";
 import Toaster from "./_components/Toaster";
+import SyncProvider from "./_components/SyncProvider";
 
 const plexSans = IBM_Plex_Sans({
   subsets: ["latin"],
@@ -32,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <Toaster />
+        <SyncProvider />
       </body>
     </html>
   );
