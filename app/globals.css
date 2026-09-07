@@ -204,6 +204,8 @@ h3 {
 h1 {
   font-size: var(--text-xl);
   line-height: 1.25;
+  font-family: var(--font-serif);
+  font-weight: 600;
 }
 
 h2 {
@@ -281,6 +283,12 @@ p {
   letter-spacing: -0.02em;
   color: var(--text);
   font-size: 0.9375rem;
+}
+
+.nav__brand,
+.hero__brand,
+.auth__brand {
+  font-family: var(--font-serif);
 }
 
 .nav__mark {
@@ -897,6 +905,7 @@ textarea.input {
   text-transform: uppercase;
   letter-spacing: 0.03em;
   margin: var(--space-3) 0;
+  font-family: var(--font-mono);
 }
 
 .timeline__head {
@@ -976,7 +985,7 @@ textarea.input {
 }
 .project-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-md); }
 .project-card__name { font-weight: 600; }
-.project-card__meta { color: var(--text-subtle); font-size: var(--text-xs); }
+.project-card__meta { color: var(--text-subtle); font-size: var(--text-xs); font-family: var(--font-mono); }
 .project-create { display: flex; gap: var(--space-2); max-width: 420px; }
 .project-create .input { flex: 1; }
 
