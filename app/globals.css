@@ -1269,11 +1269,6 @@ textarea.input {
     background: var(--bg-elevated);
     border-top: 1px solid var(--border);
   }
-
-  [data-sonner-toaster] {
-    --offset-bottom: calc(64px + var(--space-3));
-    --mobile-offset-bottom: calc(64px + var(--space-3));
-  }
 }
 
 .mobile-nav__link {
