@@ -1264,7 +1264,7 @@ textarea.input {
     right: 0;
     bottom: 0;
     z-index: 25;
-    height: 64px;
+    height: calc(64px + env(safe-area-inset-bottom, 0px));
     padding-bottom: env(safe-area-inset-bottom, 0px);
     background: var(--bg-elevated);
     border-top: 1px solid var(--border);
