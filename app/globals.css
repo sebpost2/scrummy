@@ -772,6 +772,17 @@ textarea.input {
   border-color: transparent;
 }
 
+@keyframes badge-stamp {
+  from { transform: scale(1.18); }
+  to { transform: scale(1); }
+}
+.badge--stamp {
+  animation: badge-stamp var(--dur-base) var(--ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  .badge--stamp { animation: none; }
+}
+
 /* ============================================================
    Avatar
    ============================================================ */
