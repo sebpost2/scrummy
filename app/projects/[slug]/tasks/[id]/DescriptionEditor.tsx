@@ -3,6 +3,7 @@
 import { useOptimistic, useState, useTransition } from "react";
 
 import { toast } from "@/app/_components/toast";
+import { callAction } from "@/lib/sync/callAction";
 
 import { updateDescriptionAction } from "./actions";
 
@@ -26,7 +27,11 @@ export function DescriptionEditor({
     start(async () => {
       setOpt(next);
       try {
-        await updateDescriptionAction(taskId, slug, next);
+        await callAction(() => updateDescriptionAction(taskId, slug, next), {
+          type: "updateTaskDescription",
+          args: [taskId, next],
+          entityId: taskId,
+        });
         toast.success("Updated description");
       } catch {
         toast.error("Couldn't update description");

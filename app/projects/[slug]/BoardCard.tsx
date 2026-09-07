@@ -18,6 +18,7 @@ import RelativeTime from "@/app/_components/RelativeTime";
 import { PriorityBadge } from "@/app/_components/Badge";
 import Menu, { MenuItem, MenuSeparator } from "@/app/_components/Menu";
 import { toast } from "@/app/_components/toast";
+import { callAction } from "@/lib/sync/callAction";
 
 import type { BoardTask } from "./board-state";
 import { reassignTaskAction } from "./tasks/[id]/actions";
@@ -47,7 +48,11 @@ function CardMenu({
   function reassign(assigneeId: string) {
     start(async () => {
       try {
-        await reassignTaskAction(task.id, slug, assigneeId);
+        await callAction(() => reassignTaskAction(task.id, slug, assigneeId), {
+          type: "reassignTask",
+          args: [task.id, assigneeId],
+          entityId: task.id,
+        });
         router.refresh();
       } catch {
         toast.error("Couldn't reassign that task");

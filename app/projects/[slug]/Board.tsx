@@ -17,6 +17,7 @@ import { SortableContext, sortableKeyboardCoordinates } from "@dnd-kit/sortable"
 import type { TaskStatus } from "@prisma/client";
 
 import { toast } from "@/app/_components/toast";
+import { callAction } from "@/lib/sync/callAction";
 
 import { updateStatusAction, reorderTaskAction } from "./tasks/[id]/actions";
 import { boardReducer, columnTasks, type BoardTask } from "./board-state";
@@ -65,7 +66,11 @@ export default function Board({
     startTransition(async () => {
       dispatch({ type: "move", taskId, toStatus });
       try {
-        await updateStatusAction(taskId, slug, toStatus);
+        await callAction(() => updateStatusAction(taskId, slug, toStatus), {
+          type: "updateTaskStatus",
+          args: [taskId, toStatus],
+          entityId: taskId,
+        });
         toast.success(`Moved “${task.title}” to ${label}`);
       } catch {
         toast.error("Couldn't move that task");
@@ -97,7 +102,11 @@ export default function Board({
     startTransition(async () => {
       dispatch({ type: "reorder", taskId, rank });
       try {
-        await reorderTaskAction(taskId, slug, rank);
+        await callAction(() => reorderTaskAction(taskId, slug, rank), {
+          type: "reorderTask",
+          args: [taskId, rank],
+          entityId: taskId,
+        });
       } catch {
         toast.error("Couldn't reorder that task");
       }

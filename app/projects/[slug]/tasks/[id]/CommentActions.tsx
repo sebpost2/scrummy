@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 
 import { toast } from "@/app/_components/toast";
+import { callAction } from "@/lib/sync/callAction";
 
 import { editCommentAction, deleteCommentAction } from "./actions";
 
@@ -29,7 +30,11 @@ export function CommentActions({
           setEditing(false);
           start(async () => {
             try {
-              await editCommentAction(eventId, taskId, slug, value);
+              await callAction(() => editCommentAction(eventId, taskId, slug, value), {
+                type: "editTaskComment",
+                args: [eventId, value],
+                entityId: taskId,
+              });
             } catch {
               toast.error("Couldn't save the comment");
             }
@@ -62,7 +67,11 @@ export function CommentActions({
           if (!confirm("Delete this comment?")) return;
           start(async () => {
             try {
-              await deleteCommentAction(eventId, taskId, slug);
+              await callAction(() => deleteCommentAction(eventId, taskId, slug), {
+                type: "deleteTaskComment",
+                args: [eventId],
+                entityId: taskId,
+              });
             } catch {
               toast.error("Couldn't delete the comment");
             }

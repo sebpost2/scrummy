@@ -3,6 +3,7 @@
 import { useOptimistic, useState, useTransition } from "react";
 
 import { toast } from "@/app/_components/toast";
+import { callAction } from "@/lib/sync/callAction";
 
 import { updateTitleAction } from "./actions";
 
@@ -26,7 +27,11 @@ export function EditableTitle({
     start(async () => {
       setOpt(next);
       try {
-        await updateTitleAction(taskId, slug, next);
+        await callAction(() => updateTitleAction(taskId, slug, next), {
+          type: "updateTaskTitle",
+          args: [taskId, next],
+          entityId: taskId,
+        });
         toast.success("Updated title");
       } catch {
         toast.error("Couldn't update title");

@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 
 import IconButton from "@/app/_components/IconButton";
 import { toast } from "@/app/_components/toast";
+import { callAction } from "@/lib/sync/callAction";
 
 import { addSubtaskAction, toggleSubtaskAction, deleteSubtaskAction } from "./actions";
 
@@ -48,7 +49,11 @@ export function Subtasks({
                   start(async () => {
                     setOptimistic(optimistic.map((x) => (x.id === s.id ? { ...x, done: next } : x)));
                     try {
-                      await toggleSubtaskAction(s.id, taskId, slug, next);
+                      await callAction(() => toggleSubtaskAction(s.id, taskId, slug, next), {
+                        type: "toggleSubtask",
+                        args: [s.id, next],
+                        entityId: taskId,
+                      });
                     } catch {
                       toast.error("Couldn't update the subtask");
                     }
@@ -65,7 +70,11 @@ export function Subtasks({
                 start(async () => {
                   setOptimistic(optimistic.filter((x) => x.id !== s.id));
                   try {
-                    await deleteSubtaskAction(s.id, taskId, slug);
+                    await callAction(() => deleteSubtaskAction(s.id, taskId, slug), {
+                      type: "deleteSubtask",
+                      args: [s.id],
+                      entityId: taskId,
+                    });
                   } catch {
                     toast.error("Couldn't delete the subtask");
                   }
@@ -86,7 +95,11 @@ export function Subtasks({
           if (inputRef.current) inputRef.current.value = "";
           start(async () => {
             try {
-              await addSubtaskAction(taskId, slug, title);
+              await callAction(() => addSubtaskAction(taskId, slug, title), {
+                type: "addSubtask",
+                args: [taskId, title],
+                entityId: taskId,
+              });
             } catch {
               toast.error("Couldn't add the subtask");
             }
