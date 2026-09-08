@@ -25,18 +25,27 @@ export default function NotificationsBell({
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
+  const hasUnreadStored = items.some((item) => item.kind === "notification" && !item.readAt);
 
   function markRead(id: string) {
     startTransition(async () => {
-      await markNotificationReadAction(id);
-      router.refresh();
+      try {
+        await markNotificationReadAction(id);
+        router.refresh();
+      } catch {
+        // best-effort; losing a mark-read while offline is fine
+      }
     });
   }
 
   function markAllRead() {
     startTransition(async () => {
-      await markAllNotificationsReadAction();
-      router.refresh();
+      try {
+        await markAllNotificationsReadAction();
+        router.refresh();
+      } catch {
+        // best-effort; losing a mark-all-read while offline is fine
+      }
     });
   }
 
@@ -54,42 +63,44 @@ export default function NotificationsBell({
       <div className="menu__header">
         <span className="menu__header-name">Notifications</span>
       </div>
-      {items.length === 0 ? (
-        <p className="notif-empty">You&apos;re all caught up.</p>
-      ) : (
-        items.map((item) =>
-          item.kind === "notification" ? (
-            <MenuItem
-              key={item.id}
-              href={`/projects/${item.projectSlug}/tasks/${item.taskId}`}
-              onSelect={() => markRead(item.id)}
-            >
-              <span className={`notif-item${item.readAt ? "" : " notif-item--unread"}`}>
-                {item.actorName && <Avatar name={item.actorName} size="sm" />}
-                <span className="notif-item__body">
-                  <span className="notif-item__text">
-                    {item.actorName ?? "Someone"} {TRIGGER_LABEL[item.type as "ASSIGNED" | "MENTIONED"]} on{" "}
-                    <strong>{item.taskTitle}</strong>
+      <div className="notif-list">
+        {items.length === 0 ? (
+          <p className="notif-empty">You&apos;re all caught up.</p>
+        ) : (
+          items.map((item) =>
+            item.kind === "notification" ? (
+              <MenuItem
+                key={item.id}
+                href={`/projects/${item.projectSlug}/tasks/${item.taskId}`}
+                onSelect={() => markRead(item.id)}
+              >
+                <span className={`notif-item${item.readAt ? "" : " notif-item--unread"}`}>
+                  {item.actorName && <Avatar name={item.actorName} size="sm" />}
+                  <span className="notif-item__body">
+                    <span className="notif-item__text">
+                      {item.actorName ?? "Someone"} {TRIGGER_LABEL[item.type as "ASSIGNED" | "MENTIONED"]} on{" "}
+                      <strong>{item.taskTitle}</strong>
+                    </span>
+                    <RelativeTime date={item.createdAt} className="notif-item__time" />
                   </span>
-                  <RelativeTime date={item.createdAt} className="notif-item__time" />
                 </span>
-              </span>
-            </MenuItem>
-          ) : (
-            <MenuItem key={`due-${item.taskId}`} href={`/projects/${item.projectSlug}/tasks/${item.taskId}`}>
-              <span className="notif-item notif-item--unread">
-                <span className="notif-item__body">
-                  <span className="notif-item__text">
-                    <strong>{item.taskTitle}</strong> is due soon
+              </MenuItem>
+            ) : (
+              <MenuItem key={`due-${item.taskId}`} href={`/projects/${item.projectSlug}/tasks/${item.taskId}`}>
+                <span className="notif-item notif-item--unread">
+                  <span className="notif-item__body">
+                    <span className="notif-item__text">
+                      <strong>{item.taskTitle}</strong> {item.overdue ? "is overdue" : "is due soon"}
+                    </span>
+                    <RelativeTime date={item.dueDate} className="notif-item__time" />
                   </span>
-                  <RelativeTime date={item.dueDate} className="notif-item__time" />
                 </span>
-              </span>
-            </MenuItem>
-          ),
-        )
-      )}
-      {unreadCount > 0 && (
+              </MenuItem>
+            ),
+          )
+        )}
+      </div>
+      {hasUnreadStored && (
         <>
           <MenuSeparator />
           <MenuItem onSelect={markAllRead}>Mark all as read</MenuItem>

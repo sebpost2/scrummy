@@ -23,6 +23,7 @@ export type NavNotificationItem =
       taskTitle: string;
       projectSlug: string;
       dueDate: Date;
+      overdue: boolean;
     };
 
 export async function getNavNotifications(
@@ -66,6 +67,7 @@ export async function getNavNotifications(
       taskTitle: t.title,
       projectSlug: t.project.slug,
       dueDate: t.dueDate as Date,
+      overdue: t.dueDate! < new Date(),
     })),
   ];
 

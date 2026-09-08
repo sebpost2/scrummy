@@ -14,6 +14,7 @@ const LIMITS = {
   labelCount: 50,
   labelLen: 100,
   subtaskTitle: 500,
+  mentions: 50,
 } as const;
 
 async function requireProjectAccess(userId: string, projectId: string): Promise<void> {
@@ -183,7 +184,11 @@ export async function reassignTask(
     clientTimestamp,
   );
   if (assigneeId && updated.assigneeId === assigneeId) {
-    await notifyAssigned(userId, taskId, assigneeId);
+    try {
+      await notifyAssigned(userId, taskId, assigneeId);
+    } catch (err) {
+      console.error("notifyAssigned failed", err);
+    }
   }
   return updated;
 }
@@ -242,13 +247,18 @@ export async function addTaskComment(
   const trimmed = comment.trim();
   if (!trimmed) throw new Error("COMMENT_REQUIRED");
   if (trimmed.length > LIMITS.comment) throw new Error("COMMENT_TOO_LONG");
+  if (mentionedUserIds.length > LIMITS.mentions) throw new Error("TOO_MANY_MENTIONS");
 
   await prisma.taskEvent.create({
     data: { taskId, userId, type: "COMMENTED", comment: trimmed },
   });
 
   if (mentionedUserIds.length > 0) {
-    await notifyMentions(userId, task.projectId, taskId, mentionedUserIds);
+    try {
+      await notifyMentions(userId, task.projectId, taskId, mentionedUserIds);
+    } catch (err) {
+      console.error("notifyMentions failed", err);
+    }
   }
 
   return task;

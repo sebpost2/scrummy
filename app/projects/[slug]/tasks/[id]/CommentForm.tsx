@@ -83,7 +83,7 @@ export function CommentForm({
           }}
         />
         {matches.length > 0 && (
-          <ul className="mention-picker" role="listbox">
+          <ul className="mention-picker">
             {matches.map((m) => (
               <li key={m.id}>
                 <button type="button" className="mention-picker__item" onClick={() => pickMention(m)}>

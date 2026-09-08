@@ -87,7 +87,9 @@ export default async function TaskDetailPage({
                 <CommentForm
                   taskId={id}
                   slug={slug}
-                  members={detail.project.members.map((m) => ({ id: m.user.id, name: m.user.name }))}
+                  members={detail.project.members
+                    .filter((m) => m.user.id !== user.id)
+                    .map((m) => ({ id: m.user.id, name: m.user.name }))}
                 />
               </section>
             </div>

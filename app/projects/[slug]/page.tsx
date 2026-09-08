@@ -31,10 +31,12 @@ export default async function BoardPage({
   const { slug } = await params;
   const query = await searchParams;
 
-  const [project, navProjects] = await Promise.all([getProjectBySlug(slug), getNavProjects(user.id)]);
+  const [project, navProjects, notifications] = await Promise.all([
+    getProjectBySlug(slug),
+    getNavProjects(user.id),
+    getNavNotifications(user.id),
+  ]);
   if (!project) notFound();
-
-  const notifications = await getNavNotifications(user.id);
 
   const filters: BoardFilters = {
     assigneeId: query.assignee || undefined,
