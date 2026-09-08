@@ -161,7 +161,7 @@ describe("reassignTask — notifications", () => {
     const earlier = new Date(now.getTime() - 60_000);
 
     await reassignTask(owner.id, task.id, outsider.id, now);
-    await prisma.notification.deleteMany(); // isolate the second call
+    await prisma.notification.deleteMany({ where: { taskId: task.id } }); // isolate the second call
     await reassignTask(owner.id, task.id, thirdMember.id, earlier);
 
     const notifs = await prisma.notification.findMany({ where: { taskId: task.id } });
