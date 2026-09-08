@@ -1212,6 +1212,67 @@ textarea.input {
 @keyframes menu-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .menu__panel { animation: none; } }
 
+.notif-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notif-dot {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  font-size: 0.625rem;
+  font-weight: 600;
+  line-height: 1;
+  color: white;
+  background: var(--danger);
+  border-radius: 999px;
+}
+
+.notif-empty {
+  padding: 12px 8px;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.notif-item--unread .notif-item__text {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.notif-item__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.notif-item__text {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  white-space: normal;
+}
+
+.notif-item__time {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+}
+
 /* ============================================================
    Responsive
    ============================================================ */

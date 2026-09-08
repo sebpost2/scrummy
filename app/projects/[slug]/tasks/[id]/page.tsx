@@ -4,6 +4,7 @@ import { Nav } from "@/app/_components/Nav";
 import { requireUser } from "@/lib/auth/session";
 import { getProjectMembership } from "@/lib/projects/mutations";
 import { getProjectBySlug, getNavProjects } from "@/lib/projects/queries";
+import { getNavNotifications } from "@/lib/notifications/queries";
 import { getTaskWithEvents } from "@/lib/tasks/queries";
 
 import { TaskProperties } from "./TaskProperties";
@@ -30,6 +31,7 @@ export default async function TaskDetailPage({
   if (!membership) notFound();
 
   const navProjects = await getNavProjects(user.id);
+  const notifications = await getNavNotifications(user.id);
 
   return (
     <>
@@ -37,6 +39,7 @@ export default async function TaskDetailPage({
         user={{ name: user.name, email: user.email }}
         projects={navProjects.map((m) => ({ name: m.project.name, slug: m.project.slug }))}
         currentSlug={slug}
+        notifications={notifications}
       />
       <main className="container">
         <div className="stack">

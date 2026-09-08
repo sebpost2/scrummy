@@ -7,6 +7,7 @@ import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { getProjectMembership } from "@/lib/projects/mutations";
 import { getProjectBySlug, getNavProjects } from "@/lib/projects/queries";
+import { getNavNotifications } from "@/lib/notifications/queries";
 
 import { RenameProjectForm } from "./RenameProjectForm";
 import { MemberRoleToggle } from "./MemberRoleToggle";
@@ -35,6 +36,7 @@ export default async function ProjectSettingsPage({
   const ownerCount = members.filter((m) => m.role === "OWNER").length;
 
   const navProjects = await getNavProjects(user.id);
+  const notifications = await getNavNotifications(user.id);
 
   return (
     <>
@@ -42,6 +44,7 @@ export default async function ProjectSettingsPage({
         user={{ name: user.name, email: user.email }}
         projects={navProjects.map((m) => ({ name: m.project.name, slug: m.project.slug }))}
         currentSlug={slug}
+        notifications={notifications}
       />
       <main className="container">
         <div className="stack">

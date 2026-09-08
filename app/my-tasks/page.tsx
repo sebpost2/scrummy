@@ -4,6 +4,7 @@ import { EmptyState } from "@/app/_components/EmptyState";
 import { TaskRow } from "@/app/_components/TaskCard";
 import { requireUser } from "@/lib/auth/session";
 import { getNavProjects } from "@/lib/projects/queries";
+import { getNavNotifications } from "@/lib/notifications/queries";
 import { getMyTasks } from "@/lib/tasks/queries";
 
 export default async function MyTasksPage() {
@@ -11,6 +12,7 @@ export default async function MyTasksPage() {
   const tasks = await getMyTasks(user.id);
 
   const navProjects = await getNavProjects(user.id);
+  const notifications = await getNavNotifications(user.id);
 
   const byProject = new Map<string, { name: string; slug: string; tasks: typeof tasks }>();
   for (const task of tasks) {
@@ -24,6 +26,7 @@ export default async function MyTasksPage() {
       <Nav
         user={{ name: user.name, email: user.email }}
         projects={navProjects.map((m) => ({ name: m.project.name, slug: m.project.slug }))}
+        notifications={notifications}
       />
       <main className="container">
         <div className="stack">
