@@ -61,7 +61,8 @@ export const MUTATION_REGISTRY = {
     updateTaskDueDate(userId, args[0] as string, args[1] ? new Date(args[1] as string) : null, ts),
   updateTaskLabels: (userId, args, ts) => updateTaskLabels(userId, args[0] as string, args[1] as string[], ts),
   reorderTask: (userId, args, ts) => reorderTask(userId, args[0] as string, args[1] as number, ts),
-  addTaskComment: (userId, args) => addTaskComment(userId, args[0] as string, args[1] as string),
+  addTaskComment: (userId, args) =>
+    addTaskComment(userId, args[0] as string, args[1] as string, args[2] as string[] | undefined),
   editTaskComment: (userId, args) => editTaskComment(userId, args[0] as string, args[1] as string),
   deleteTaskComment: (userId, args) => deleteTaskComment(userId, args[0] as string),
   addSubtask: (userId, args) => addSubtask(userId, args[0] as string, args[1] as string),

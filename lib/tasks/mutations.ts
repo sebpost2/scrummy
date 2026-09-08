@@ -1,6 +1,7 @@
 import type { Task, TaskStatus, TaskPriority, TaskEventType, Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db/prisma";
+import { notifyAssigned, notifyMentions } from "@/lib/notifications/mutations";
 import { getProjectMembership } from "@/lib/projects/mutations";
 import { isNewer } from "@/lib/sync/lww";
 
@@ -172,7 +173,19 @@ export async function reassignTask(
   }
   if (task.assigneeId === assigneeId) return task;
 
-  return applyLwwFieldChange(task, userId, "REASSIGNED", { assigneeId }, task.assigneeId, assigneeId, clientTimestamp);
+  const updated = await applyLwwFieldChange(
+    task,
+    userId,
+    "REASSIGNED",
+    { assigneeId },
+    task.assigneeId,
+    assigneeId,
+    clientTimestamp,
+  );
+  if (assigneeId && updated.assigneeId === assigneeId) {
+    await notifyAssigned(userId, taskId, assigneeId);
+  }
+  return updated;
 }
 
 export async function updateTaskPriority(
@@ -219,7 +232,12 @@ export async function updateTaskLabels(
   return applyLwwFieldChange(task, userId, "LABELS_CHANGED", { labels: cleaned }, oldValue, newValue, clientTimestamp);
 }
 
-export async function addTaskComment(userId: string, taskId: string, comment: string): Promise<Task> {
+export async function addTaskComment(
+  userId: string,
+  taskId: string,
+  comment: string,
+  mentionedUserIds: string[] = [],
+): Promise<Task> {
   const task = await requireTaskAccess(userId, taskId);
   const trimmed = comment.trim();
   if (!trimmed) throw new Error("COMMENT_REQUIRED");
@@ -228,6 +246,11 @@ export async function addTaskComment(userId: string, taskId: string, comment: st
   await prisma.taskEvent.create({
     data: { taskId, userId, type: "COMMENTED", comment: trimmed },
   });
+
+  if (mentionedUserIds.length > 0) {
+    await notifyMentions(userId, task.projectId, taskId, mentionedUserIds);
+  }
+
   return task;
 }
 
