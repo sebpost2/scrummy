@@ -1497,3 +1497,38 @@ textarea.input {
   gap: var(--space-2);
   flex: none;
 }
+
+.composer {
+  position: relative;
+}
+
+.mention-picker {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  z-index: 40;
+  min-width: 160px;
+  padding: 4px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-lg);
+}
+
+.mention-picker__item {
+  display: block;
+  width: 100%;
+  padding: 7px 8px;
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  color: var(--text);
+  background: none;
+  border: 0;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.mention-picker__item:hover {
+  background: var(--surface-hover);
+}

@@ -84,7 +84,11 @@ export default async function TaskDetailPage({
 
               <section className="stack">
                 <h2>Add a comment</h2>
-                <CommentForm taskId={id} slug={slug} />
+                <CommentForm
+                  taskId={id}
+                  slug={slug}
+                  members={detail.project.members.map((m) => ({ id: m.user.id, name: m.user.name }))}
+                />
               </section>
             </div>
 
