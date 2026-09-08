@@ -1,6 +1,7 @@
-import type { Task, TaskStatus, TaskPriority, TaskEventType } from "@prisma/client";
+import type { Task, TaskStatus, TaskPriority, TaskEventType, Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db/prisma";
+import { notifyAssigned, notifyMentions } from "@/lib/notifications/mutations";
 import { getProjectMembership } from "@/lib/projects/mutations";
 import { isNewer } from "@/lib/sync/lww";
 
@@ -13,6 +14,7 @@ const LIMITS = {
   labelCount: 50,
   labelLen: 100,
   subtaskTitle: 500,
+  mentions: 50,
 } as const;
 
 async function requireProjectAccess(userId: string, projectId: string): Promise<void> {
@@ -33,6 +35,41 @@ async function latestEventTimestamp(taskId: string, type: TaskEventType): Promis
     orderBy: { clientTimestamp: "desc" },
   });
   return event?.clientTimestamp ?? null;
+}
+
+// Shared by every task field that can be edited offline and later synced.
+// LWW = last-write-wins: if a newer edit already landed for this field, the
+// incoming one is recorded as an overwritten TaskEvent instead of applied.
+async function applyLwwFieldChange(
+  task: Task,
+  userId: string,
+  type: TaskEventType,
+  data: Prisma.TaskUncheckedUpdateInput,
+  oldValue: string | null,
+  newValue: string | null,
+  clientTimestamp: Date,
+): Promise<Task> {
+  const current = await latestEventTimestamp(task.id, type);
+  if (!isNewer(clientTimestamp, current)) {
+    await prisma.taskEvent.create({
+      data: {
+        taskId: task.id,
+        userId,
+        type,
+        oldValue,
+        newValue,
+        clientTimestamp,
+        comment: "overwritten by a newer edit made elsewhere",
+      },
+    });
+    return task;
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.task.update({ where: { id: task.id }, data });
+    await tx.taskEvent.create({ data: { taskId: task.id, userId, type, oldValue, newValue, clientTimestamp } });
+    return updated;
+  });
 }
 
 export async function createTask(
@@ -121,29 +158,7 @@ export async function updateTaskStatus(
   const task = await requireTaskAccess(userId, taskId);
   if (task.status === status) return task;
 
-  const current = await latestEventTimestamp(taskId, "STATUS_CHANGED");
-  if (!isNewer(clientTimestamp, current)) {
-    await prisma.taskEvent.create({
-      data: {
-        taskId,
-        userId,
-        type: "STATUS_CHANGED",
-        oldValue: task.status,
-        newValue: status,
-        clientTimestamp,
-        comment: "overwritten by a newer edit made elsewhere",
-      },
-    });
-    return task;
-  }
-
-  return prisma.$transaction(async (tx) => {
-    const updated = await tx.task.update({ where: { id: taskId }, data: { status } });
-    await tx.taskEvent.create({
-      data: { taskId, userId, type: "STATUS_CHANGED", oldValue: task.status, newValue: status, clientTimestamp },
-    });
-    return updated;
-  });
+  return applyLwwFieldChange(task, userId, "STATUS_CHANGED", { status }, task.status, status, clientTimestamp);
 }
 
 export async function reassignTask(
@@ -159,29 +174,23 @@ export async function reassignTask(
   }
   if (task.assigneeId === assigneeId) return task;
 
-  const current = await latestEventTimestamp(taskId, "REASSIGNED");
-  if (!isNewer(clientTimestamp, current)) {
-    await prisma.taskEvent.create({
-      data: {
-        taskId,
-        userId,
-        type: "REASSIGNED",
-        oldValue: task.assigneeId,
-        newValue: assigneeId,
-        clientTimestamp,
-        comment: "overwritten by a newer edit made elsewhere",
-      },
-    });
-    return task;
+  const updated = await applyLwwFieldChange(
+    task,
+    userId,
+    "REASSIGNED",
+    { assigneeId },
+    task.assigneeId,
+    assigneeId,
+    clientTimestamp,
+  );
+  if (assigneeId && updated.assigneeId === assigneeId) {
+    try {
+      await notifyAssigned(userId, taskId, assigneeId);
+    } catch (err) {
+      console.error("notifyAssigned failed", err);
+    }
   }
-
-  return prisma.$transaction(async (tx) => {
-    const updated = await tx.task.update({ where: { id: taskId }, data: { assigneeId } });
-    await tx.taskEvent.create({
-      data: { taskId, userId, type: "REASSIGNED", oldValue: task.assigneeId, newValue: assigneeId, clientTimestamp },
-    });
-    return updated;
-  });
+  return updated;
 }
 
 export async function updateTaskPriority(
@@ -193,29 +202,7 @@ export async function updateTaskPriority(
   const task = await requireTaskAccess(userId, taskId);
   if (task.priority === priority) return task;
 
-  const current = await latestEventTimestamp(taskId, "PRIORITY_CHANGED");
-  if (!isNewer(clientTimestamp, current)) {
-    await prisma.taskEvent.create({
-      data: {
-        taskId,
-        userId,
-        type: "PRIORITY_CHANGED",
-        oldValue: task.priority,
-        newValue: priority,
-        clientTimestamp,
-        comment: "overwritten by a newer edit made elsewhere",
-      },
-    });
-    return task;
-  }
-
-  return prisma.$transaction(async (tx) => {
-    const updated = await tx.task.update({ where: { id: taskId }, data: { priority } });
-    await tx.taskEvent.create({
-      data: { taskId, userId, type: "PRIORITY_CHANGED", oldValue: task.priority, newValue: priority, clientTimestamp },
-    });
-    return updated;
-  });
+  return applyLwwFieldChange(task, userId, "PRIORITY_CHANGED", { priority }, task.priority, priority, clientTimestamp);
 }
 
 export async function updateTaskDueDate(
@@ -229,29 +216,7 @@ export async function updateTaskDueDate(
   const newValue = dueDate?.toISOString() ?? null;
   if (oldValue === newValue) return task;
 
-  const current = await latestEventTimestamp(taskId, "DUE_DATE_CHANGED");
-  if (!isNewer(clientTimestamp, current)) {
-    await prisma.taskEvent.create({
-      data: {
-        taskId,
-        userId,
-        type: "DUE_DATE_CHANGED",
-        oldValue,
-        newValue,
-        clientTimestamp,
-        comment: "overwritten by a newer edit made elsewhere",
-      },
-    });
-    return task;
-  }
-
-  return prisma.$transaction(async (tx) => {
-    const updated = await tx.task.update({ where: { id: taskId }, data: { dueDate } });
-    await tx.taskEvent.create({
-      data: { taskId, userId, type: "DUE_DATE_CHANGED", oldValue, newValue, clientTimestamp },
-    });
-    return updated;
-  });
+  return applyLwwFieldChange(task, userId, "DUE_DATE_CHANGED", { dueDate }, oldValue, newValue, clientTimestamp);
 }
 
 export async function updateTaskLabels(
@@ -269,40 +234,33 @@ export async function updateTaskLabels(
   const newValue = cleaned.join(",");
   if (oldValue === newValue) return task;
 
-  const current = await latestEventTimestamp(taskId, "LABELS_CHANGED");
-  if (!isNewer(clientTimestamp, current)) {
-    await prisma.taskEvent.create({
-      data: {
-        taskId,
-        userId,
-        type: "LABELS_CHANGED",
-        oldValue,
-        newValue,
-        clientTimestamp,
-        comment: "overwritten by a newer edit made elsewhere",
-      },
-    });
-    return task;
-  }
-
-  return prisma.$transaction(async (tx) => {
-    const updated = await tx.task.update({ where: { id: taskId }, data: { labels: cleaned } });
-    await tx.taskEvent.create({
-      data: { taskId, userId, type: "LABELS_CHANGED", oldValue, newValue, clientTimestamp },
-    });
-    return updated;
-  });
+  return applyLwwFieldChange(task, userId, "LABELS_CHANGED", { labels: cleaned }, oldValue, newValue, clientTimestamp);
 }
 
-export async function addTaskComment(userId: string, taskId: string, comment: string): Promise<Task> {
+export async function addTaskComment(
+  userId: string,
+  taskId: string,
+  comment: string,
+  mentionedUserIds: string[] = [],
+): Promise<Task> {
   const task = await requireTaskAccess(userId, taskId);
   const trimmed = comment.trim();
   if (!trimmed) throw new Error("COMMENT_REQUIRED");
   if (trimmed.length > LIMITS.comment) throw new Error("COMMENT_TOO_LONG");
+  if (mentionedUserIds.length > LIMITS.mentions) throw new Error("TOO_MANY_MENTIONS");
 
   await prisma.taskEvent.create({
     data: { taskId, userId, type: "COMMENTED", comment: trimmed },
   });
+
+  if (mentionedUserIds.length > 0) {
+    try {
+      await notifyMentions(userId, task.projectId, taskId, mentionedUserIds);
+    } catch (err) {
+      console.error("notifyMentions failed", err);
+    }
+  }
+
   return task;
 }
 

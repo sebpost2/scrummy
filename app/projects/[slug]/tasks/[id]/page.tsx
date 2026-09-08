@@ -3,8 +3,9 @@ import { notFound } from "next/navigation";
 import { Nav } from "@/app/_components/Nav";
 import { requireUser } from "@/lib/auth/session";
 import { getProjectMembership } from "@/lib/projects/mutations";
+import { getProjectBySlug, getNavProjects } from "@/lib/projects/queries";
+import { getNavNotifications } from "@/lib/notifications/queries";
 import { getTaskWithEvents } from "@/lib/tasks/queries";
-import { prisma } from "@/lib/db/prisma";
 
 import { TaskProperties } from "./TaskProperties";
 import { CommentForm } from "./CommentForm";
@@ -23,17 +24,14 @@ export default async function TaskDetailPage({
   const { slug, id } = await params;
 
   const detail = await getTaskWithEvents(id);
-  const project = await prisma.project.findUnique({ where: { slug } });
+  const project = await getProjectBySlug(slug);
   if (!detail || !project || detail.project.id !== project.id) notFound();
 
   const membership = await getProjectMembership(user.id, detail.project.id);
   if (!membership) notFound();
 
-  const navProjects = await prisma.projectMember.findMany({
-    where: { userId: user.id },
-    include: { project: true },
-    orderBy: { project: { createdAt: "desc" } },
-  });
+  const navProjects = await getNavProjects(user.id);
+  const notifications = await getNavNotifications(user.id);
 
   return (
     <>
@@ -41,6 +39,7 @@ export default async function TaskDetailPage({
         user={{ name: user.name, email: user.email }}
         projects={navProjects.map((m) => ({ name: m.project.name, slug: m.project.slug }))}
         currentSlug={slug}
+        notifications={notifications}
       />
       <main className="container">
         <div className="stack">
@@ -85,7 +84,13 @@ export default async function TaskDetailPage({
 
               <section className="stack">
                 <h2>Add a comment</h2>
-                <CommentForm taskId={id} slug={slug} />
+                <CommentForm
+                  taskId={id}
+                  slug={slug}
+                  members={detail.project.members
+                    .filter((m) => m.user.id !== user.id)
+                    .map((m) => ({ id: m.user.id, name: m.user.name }))}
+                />
               </section>
             </div>
 

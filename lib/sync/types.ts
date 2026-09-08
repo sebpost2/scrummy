@@ -1,28 +1,9 @@
-export type OutboxMutationType =
-  | "createTask"
-  | "updateTaskTitle"
-  | "updateTaskDescription"
-  | "deleteTask"
-  | "reassignTask"
-  | "updateTaskStatus"
-  | "updateTaskPriority"
-  | "updateTaskDueDate"
-  | "updateTaskLabels"
-  | "reorderTask"
-  | "addTaskComment"
-  | "editTaskComment"
-  | "deleteTaskComment"
-  | "addSubtask"
-  | "toggleSubtask"
-  | "deleteSubtask"
-  | "createProject"
-  | "addProjectMemberByEmail"
-  | "regenerateInviteToken"
-  | "removeProjectMember"
-  | "renameProject"
-  | "deleteProject"
-  | "leaveProject"
-  | "updateMemberRole";
+// Derived from MUTATION_REGISTRY's keys (lib/sync/mutationRegistry.ts) so a new
+// mutation only needs to be added there. `import type` erases this at build
+// time, so it never pulls the registry's server-only code (prisma, etc.) into
+// the client bundle.
+import type { OutboxMutationType } from "@/lib/sync/mutationRegistry";
+export type { OutboxMutationType };
 
 export type OutboxStatus = "pending" | "syncing" | "failed-permanent";
 

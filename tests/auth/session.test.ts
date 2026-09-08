@@ -3,15 +3,9 @@ import { describe, it, expect, afterEach, afterAll } from "vitest";
 import { prisma } from "@/lib/db/prisma";
 import { hashSessionToken, issueSessionToken } from "@/lib/auth/session";
 
-let userId: string | undefined;
+import { createTestUser, cleanupTestData } from "../helpers";
 
-afterEach(async () => {
-  if (userId) {
-    await prisma.session.deleteMany({ where: { userId } });
-    await prisma.user.deleteMany({ where: { id: userId } });
-  }
-  userId = undefined;
-});
+afterEach(cleanupTestData);
 
 afterAll(async () => {
   await prisma.$disconnect();
@@ -29,10 +23,7 @@ describe("hashSessionToken", () => {
 
 describe("issueSessionToken", () => {
   it("creates a Session row keyed by the hash of the returned token, not the token itself", async () => {
-    const user = await prisma.user.create({
-      data: { email: `session-${Date.now()}@example.com`, passwordHash: "x", name: "Test User" },
-    });
-    userId = user.id;
+    const user = await createTestUser({ name: "Test User" });
 
     const { token, expiresAt } = await issueSessionToken(prisma, user.id);
 

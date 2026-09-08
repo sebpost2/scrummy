@@ -2,30 +2,24 @@ import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from "vites
 
 import { prisma } from "@/lib/db/prisma";
 import { hashPassword } from "@/lib/crypto/password";
-import { createProject } from "@/lib/projects/mutations";
 vi.mock("@/lib/auth/session", async () => {
   const actual = await vi.importActual<typeof import("@/lib/auth/session")>("@/lib/auth/session");
   return { ...actual, createSession: vi.fn().mockResolvedValue(undefined) };
 });
 import { login } from "@/app/login/actions";
 
+import { createTestUser, createTestProject, cleanupTestData } from "../helpers";
+
 let userId: string | undefined;
-let ownerId: string | undefined;
-let projectId: string | undefined;
 const email = `login-${Date.now()}@example.com`;
 
 beforeEach(async () => {
   const passwordHash = await hashPassword("password123");
-  const user = await prisma.user.create({ data: { email, passwordHash, name: "Ada" } });
+  const user = await createTestUser({ email, passwordHash, name: "Ada" });
   userId = user.id;
 });
 
-afterEach(async () => {
-  if (userId) await prisma.user.deleteMany({ where: { id: userId } });
-  if (projectId) await prisma.project.deleteMany({ where: { id: projectId } });
-  if (ownerId) await prisma.user.deleteMany({ where: { id: ownerId } });
-  userId = ownerId = projectId = undefined;
-});
+afterEach(cleanupTestData);
 
 afterAll(async () => {
   await prisma.$disconnect();
@@ -62,12 +56,8 @@ describe("login", () => {
   });
 
   it("joins the invited project and redirects to its board when an invite token is present", async () => {
-    const owner = await prisma.user.create({
-      data: { email: `login-invite-owner-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
-    ownerId = owner.id;
-    const project = await createProject(owner.id, "Login Invite Project");
-    projectId = project.id;
+    const owner = await createTestUser({ name: "Owner" });
+    const project = await createTestProject(owner.id, "Login Invite Project");
 
     let redirected: unknown;
     try {

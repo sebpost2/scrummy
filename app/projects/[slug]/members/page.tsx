@@ -7,6 +7,8 @@ import { appOrigin } from "@/lib/auth/google";
 import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { getProjectMembership } from "@/lib/projects/mutations";
+import { getProjectBySlug, getNavProjects } from "@/lib/projects/queries";
+import { getNavNotifications } from "@/lib/notifications/queries";
 
 import { AddMemberForm } from "./AddMemberForm";
 import { InviteLinkCard } from "./InviteLinkCard";
@@ -16,18 +18,15 @@ export default async function MembersPage({ params }: { params: Promise<{ slug: 
   const user = await requireUser();
   const { slug } = await params;
 
-  const project = await prisma.project.findUnique({ where: { slug } });
+  const project = await getProjectBySlug(slug);
   if (!project) notFound();
 
   const membership = await getProjectMembership(user.id, project.id);
   if (!membership || membership.role !== "OWNER") notFound();
 
   const members = await prisma.projectMember.findMany({ where: { projectId: project.id }, include: { user: true } });
-  const navProjects = await prisma.projectMember.findMany({
-    where: { userId: user.id },
-    include: { project: true },
-    orderBy: { project: { createdAt: "desc" } },
-  });
+  const navProjects = await getNavProjects(user.id);
+  const notifications = await getNavNotifications(user.id);
 
   return (
     <>
@@ -35,6 +34,7 @@ export default async function MembersPage({ params }: { params: Promise<{ slug: 
         user={{ name: user.name, email: user.email }}
         projects={navProjects.map((m) => ({ name: m.project.name, slug: m.project.slug }))}
         currentSlug={slug}
+        notifications={notifications}
       />
       <main className="container">
         <div className="stack">

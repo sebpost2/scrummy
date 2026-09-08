@@ -2,8 +2,7 @@
 
 import { useTransition } from "react";
 
-import { toast } from "@/app/_components/toast";
-import { callAction } from "@/lib/sync/callAction";
+import { callActionForResult } from "@/lib/sync/callAction";
 
 import { deleteProjectAction, leaveProjectAction } from "./actions";
 
@@ -28,16 +27,11 @@ export function SettingsDangerZone({
           onClick={() => {
             if (!confirm("Leave this project? You'll lose access to its board.")) return;
             start(async () => {
-              const res = await callAction(() => leaveProjectAction(slug), {
-                type: "leaveProject",
-                args: [slug],
-                entityId: slug,
-              });
-              if (res === undefined) {
-                toast.info("Leaving once you're back online.");
-                return;
-              }
-              if (res && !res.ok) toast.error(res.message);
+              await callActionForResult(
+                () => leaveProjectAction(slug),
+                { type: "leaveProject", args: [slug], entityId: slug },
+                "Leaving once you're back online.",
+              );
             });
           }}
         >
@@ -53,16 +47,11 @@ export function SettingsDangerZone({
             if (!confirm("Delete this project for everyone? All its tasks and history are removed. This can't be undone."))
               return;
             start(async () => {
-              const res = await callAction(() => deleteProjectAction(slug), {
-                type: "deleteProject",
-                args: [slug],
-                entityId: slug,
-              });
-              if (res === undefined) {
-                toast.info("Deleting once you're back online.");
-                return;
-              }
-              if (res && !res.ok) toast.error(res.message);
+              await callActionForResult(
+                () => deleteProjectAction(slug),
+                { type: "deleteProject", args: [slug], entityId: slug },
+                "Deleting once you're back online.",
+              );
             });
           }}
         >

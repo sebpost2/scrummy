@@ -1,7 +1,6 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSortable } from "@dnd-kit/sortable";
@@ -17,8 +16,8 @@ import Avatar from "@/app/_components/Avatar";
 import RelativeTime from "@/app/_components/RelativeTime";
 import { PriorityBadge } from "@/app/_components/Badge";
 import Menu, { MenuItem, MenuSeparator } from "@/app/_components/Menu";
-import { toast } from "@/app/_components/toast";
 import { callAction } from "@/lib/sync/callAction";
+import { useSyncedAction } from "@/lib/sync/useSyncedAction";
 
 import type { BoardTask } from "./board-state";
 import { reassignTaskAction } from "./tasks/[id]/actions";
@@ -43,21 +42,19 @@ function CardMenu({
   onMove: (taskId: string, toStatus: TaskStatus) => void;
 }) {
   const router = useRouter();
-  const [, start] = useTransition();
+  const [, run] = useSyncedAction();
 
   function reassign(assigneeId: string) {
-    start(async () => {
-      try {
-        await callAction(() => reassignTaskAction(task.id, slug, assigneeId), {
+    run(
+      () =>
+        callAction(() => reassignTaskAction(task.id, slug, assigneeId), {
           type: "reassignTask",
           args: [task.id, assigneeId],
           entityId: task.id,
-        });
-        router.refresh();
-      } catch {
-        toast.error("Couldn't reassign that task");
-      }
-    });
+        }),
+      "Couldn't reassign that task",
+      { onSuccess: () => router.refresh() },
+    );
   }
 
   return (

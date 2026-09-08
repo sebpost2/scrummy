@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach, afterAll } from "vitest";
 
 import { prisma } from "@/lib/db/prisma";
-import { createProject, addProjectMemberByEmail } from "@/lib/projects/mutations";
+import { addProjectMemberByEmail } from "@/lib/projects/mutations";
 import {
   createTask,
   updateTaskStatus,
@@ -21,32 +21,18 @@ import {
   deleteSubtask,
 } from "@/lib/tasks/mutations";
 
-let ownerId: string | undefined;
-let outsiderId: string | undefined;
-let projectId: string | undefined;
+import { createTestUser, createTestProject, cleanupTestData } from "../helpers";
 
-afterEach(async () => {
-  if (projectId) await prisma.project.deleteMany({ where: { id: projectId } });
-  if (ownerId) await prisma.user.deleteMany({ where: { id: ownerId } });
-  if (outsiderId) await prisma.user.deleteMany({ where: { id: outsiderId } });
-  ownerId = outsiderId = projectId = undefined;
-});
+afterEach(cleanupTestData);
 
 afterAll(async () => {
   await prisma.$disconnect();
 });
 
 async function setup() {
-  const owner = await prisma.user.create({
-    data: { email: `task-owner-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-  });
-  ownerId = owner.id;
-  const outsider = await prisma.user.create({
-    data: { email: `task-outsider-${Date.now()}@example.com`, passwordHash: "x", name: "Outsider" },
-  });
-  outsiderId = outsider.id;
-  const project = await createProject(owner.id, "Task Project");
-  projectId = project.id;
+  const owner = await createTestUser({ name: "Owner" });
+  const outsider = await createTestUser({ name: "Outsider" });
+  const project = await createTestProject(owner.id, "Task Project");
   return { owner, outsider, project };
 }
 
@@ -140,6 +126,69 @@ describe("reassignTask", () => {
     const task = await createTask(owner.id, project.id, { title: "Assign me" });
 
     await expect(reassignTask(owner.id, task.id, outsider.id)).rejects.toThrow("ASSIGNEE_NOT_A_MEMBER");
+  });
+});
+
+describe("reassignTask — notifications", () => {
+  it("notifies the new assignee", async () => {
+    const { owner, project, outsider } = await setup();
+    await addProjectMemberByEmail(owner.id, project.id, outsider.email);
+    const task = await createTask(owner.id, project.id, { title: "Assign me" });
+
+    await reassignTask(owner.id, task.id, outsider.id);
+
+    const notifs = await prisma.notification.findMany({ where: { userId: outsider.id, type: "ASSIGNED" } });
+    expect(notifs).toHaveLength(1);
+  });
+
+  it("does not notify on self-assignment", async () => {
+    const { owner, project } = await setup();
+    const task = await createTask(owner.id, project.id, { title: "Assign me" });
+
+    await reassignTask(owner.id, task.id, owner.id);
+
+    const notifs = await prisma.notification.findMany({ where: { userId: owner.id, type: "ASSIGNED" } });
+    expect(notifs).toHaveLength(0);
+  });
+
+  it("does not notify when an older offline reassignment is overwritten by a newer one", async () => {
+    const { owner, project, outsider } = await setup();
+    await addProjectMemberByEmail(owner.id, project.id, outsider.email);
+    const thirdMember = await createTestUser({ name: "Third" });
+    await addProjectMemberByEmail(owner.id, project.id, thirdMember.email);
+    const task = await createTask(owner.id, project.id, { title: "LWW assign" });
+    const now = new Date();
+    const earlier = new Date(now.getTime() - 60_000);
+
+    await reassignTask(owner.id, task.id, outsider.id, now);
+    await prisma.notification.deleteMany({ where: { taskId: task.id } }); // isolate the second call
+    await reassignTask(owner.id, task.id, thirdMember.id, earlier);
+
+    const notifs = await prisma.notification.findMany({ where: { taskId: task.id } });
+    expect(notifs).toHaveLength(0);
+  });
+});
+
+describe("addTaskComment — mentions", () => {
+  it("notifies mentioned project members", async () => {
+    const { owner, project, outsider } = await setup();
+    await addProjectMemberByEmail(owner.id, project.id, outsider.email);
+    const task = await createTask(owner.id, project.id, { title: "Comment me" });
+
+    await addTaskComment(owner.id, task.id, "cc @Outsider", [outsider.id]);
+
+    const notifs = await prisma.notification.findMany({ where: { userId: outsider.id, type: "MENTIONED" } });
+    expect(notifs).toHaveLength(1);
+  });
+
+  it("works with no mentions, unchanged from before", async () => {
+    const { owner, project } = await setup();
+    const task = await createTask(owner.id, project.id, { title: "Comment me" });
+
+    await addTaskComment(owner.id, task.id, "no mentions here");
+
+    const notifs = await prisma.notification.findMany({ where: { taskId: task.id } });
+    expect(notifs).toHaveLength(0);
   });
 });
 

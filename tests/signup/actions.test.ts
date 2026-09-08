@@ -1,22 +1,20 @@
 import { describe, it, expect, afterEach, afterAll, vi } from "vitest";
 
 import { prisma } from "@/lib/db/prisma";
-import { createProject } from "@/lib/projects/mutations";
 vi.mock("@/lib/auth/session", async () => {
   const actual = await vi.importActual<typeof import("@/lib/auth/session")>("@/lib/auth/session");
   return { ...actual, createSession: vi.fn().mockResolvedValue(undefined) };
 });
 import { createAccount } from "@/app/signup/actions";
 
+import { createTestUser, createTestProject, cleanupTestData } from "../helpers";
+
 let createdEmail: string | undefined;
-let ownerId: string | undefined;
-let projectId: string | undefined;
 
 afterEach(async () => {
   if (createdEmail) await prisma.user.deleteMany({ where: { email: createdEmail } });
-  if (projectId) await prisma.project.deleteMany({ where: { id: projectId } });
-  if (ownerId) await prisma.user.deleteMany({ where: { id: ownerId } });
-  createdEmail = ownerId = projectId = undefined;
+  createdEmail = undefined;
+  await cleanupTestData();
 });
 
 afterAll(async () => {
@@ -93,12 +91,8 @@ describe("createAccount", () => {
   });
 
   it("joins the invited project and redirects to its board when an invite token is present", async () => {
-    const owner = await prisma.user.create({
-      data: { email: `signup-invite-owner-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
-    ownerId = owner.id;
-    const project = await createProject(owner.id, "Signup Invite Project");
-    projectId = project.id;
+    const owner = await createTestUser({ name: "Owner" });
+    const project = await createTestProject(owner.id, "Signup Invite Project");
     const email = `signup-invite-${Date.now()}@example.com`;
     createdEmail = email;
 

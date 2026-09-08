@@ -128,8 +128,9 @@ export async function addCommentAction(
 ): Promise<CommentState> {
   const user = await requireUser();
   const comment = String(formData.get("comment") ?? "");
+  const mentionedUserIds = formData.getAll("mentionedUserIds").map(String);
   try {
-    await addTaskComment(user.id, taskId, comment);
+    await addTaskComment(user.id, taskId, comment, mentionedUserIds);
   } catch {
     return { status: "error", message: "Comment can't be empty." };
   }

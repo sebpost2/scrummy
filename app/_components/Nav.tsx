@@ -1,9 +1,12 @@
 import Link from "next/link";
 
+import type { NavNotificationItem } from "@/lib/notifications/queries";
+
 import ProjectSwitcher from "./ProjectSwitcher";
 import UserMenu from "./UserMenu";
 import ThemeToggle from "./ThemeToggle";
 import MobileNavBar from "./MobileNavBar";
+import NotificationsBell from "./NotificationsBell";
 
 const LINKS = [
   { href: "/projects", label: "Projects" },
@@ -14,10 +17,12 @@ export function Nav({
   user,
   projects = [],
   currentSlug,
+  notifications,
 }: {
   user: { name: string; email: string };
   projects?: { name: string; slug: string }[];
   currentSlug?: string;
+  notifications: { unreadCount: number; items: NavNotificationItem[] };
 }) {
   return (
     <>
@@ -35,6 +40,7 @@ export function Nav({
               {l.label}
             </Link>
           ))}
+          <NotificationsBell unreadCount={notifications.unreadCount} items={notifications.items} />
           <ThemeToggle />
           <UserMenu user={user} />
         </div>

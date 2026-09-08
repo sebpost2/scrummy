@@ -1,11 +1,11 @@
 "use client";
 
-import { useOptimistic, useRef, useTransition } from "react";
+import { useOptimistic, useRef } from "react";
 import { X } from "lucide-react";
 
 import IconButton from "@/app/_components/IconButton";
-import { toast } from "@/app/_components/toast";
 import { callAction } from "@/lib/sync/callAction";
+import { useSyncedAction } from "@/lib/sync/useSyncedAction";
 
 import { addSubtaskAction, toggleSubtaskAction, deleteSubtaskAction } from "./actions";
 
@@ -21,7 +21,7 @@ export function Subtasks({
   items: Item[];
 }) {
   const [optimistic, setOptimistic] = useOptimistic(items);
-  const [, start] = useTransition();
+  const [, run] = useSyncedAction();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const done = optimistic.filter((s) => s.done).length;
@@ -46,18 +46,16 @@ export function Subtasks({
                 checked={s.done}
                 onChange={(e) => {
                   const next = e.target.checked;
-                  start(async () => {
-                    setOptimistic(optimistic.map((x) => (x.id === s.id ? { ...x, done: next } : x)));
-                    try {
-                      await callAction(() => toggleSubtaskAction(s.id, taskId, slug, next), {
+                  run(
+                    () =>
+                      callAction(() => toggleSubtaskAction(s.id, taskId, slug, next), {
                         type: "toggleSubtask",
                         args: [s.id, next],
                         entityId: taskId,
-                      });
-                    } catch {
-                      toast.error("Couldn't update the subtask");
-                    }
-                  });
+                      }),
+                    "Couldn't update the subtask",
+                    { optimistic: () => setOptimistic(optimistic.map((x) => (x.id === s.id ? { ...x, done: next } : x))) },
+                  );
                 }}
               />
               <span className={s.done ? "subtasks__title subtasks__title--done" : "subtasks__title"}>
@@ -67,18 +65,16 @@ export function Subtasks({
             <IconButton
               label={`Delete ${s.title}`}
               onClick={() => {
-                start(async () => {
-                  setOptimistic(optimistic.filter((x) => x.id !== s.id));
-                  try {
-                    await callAction(() => deleteSubtaskAction(s.id, taskId, slug), {
+                run(
+                  () =>
+                    callAction(() => deleteSubtaskAction(s.id, taskId, slug), {
                       type: "deleteSubtask",
                       args: [s.id],
                       entityId: taskId,
-                    });
-                  } catch {
-                    toast.error("Couldn't delete the subtask");
-                  }
-                });
+                    }),
+                  "Couldn't delete the subtask",
+                  { optimistic: () => setOptimistic(optimistic.filter((x) => x.id !== s.id)) },
+                );
               }}
             >
               <X size={13} />
@@ -93,17 +89,15 @@ export function Subtasks({
           const title = String(formData.get("title") ?? "").trim();
           if (!title) return;
           if (inputRef.current) inputRef.current.value = "";
-          start(async () => {
-            try {
-              await callAction(() => addSubtaskAction(taskId, slug, title), {
+          run(
+            () =>
+              callAction(() => addSubtaskAction(taskId, slug, title), {
                 type: "addSubtask",
                 args: [taskId, title],
                 entityId: taskId,
-              });
-            } catch {
-              toast.error("Couldn't add the subtask");
-            }
-          });
+              }),
+            "Couldn't add the subtask",
+          );
         }}
       >
         <input ref={inputRef} name="title" placeholder="Add a subtask" className="input" />

@@ -5,11 +5,13 @@ import { PageHeader } from "@/app/_components/PageHeader";
 import { EmptyState } from "@/app/_components/EmptyState";
 import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
+import { getNavNotifications } from "@/lib/notifications/queries";
 
 import { NewProjectForm } from "./NewProjectForm";
 
 export default async function ProjectsPage() {
   const user = await requireUser();
+  const notifications = await getNavNotifications(user.id);
 
   const memberships = await prisma.projectMember.findMany({
     where: { userId: user.id },
@@ -24,6 +26,7 @@ export default async function ProjectsPage() {
       <Nav
         user={{ name: user.name, email: user.email }}
         projects={memberships.map((m) => ({ name: m.project.name, slug: m.project.slug }))}
+        notifications={notifications}
       />
       <main className="container">
         <div className="stack">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useOptimistic, useState, useTransition } from "react";
+import { useOptimistic, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -18,6 +18,7 @@ import type { TaskStatus } from "@prisma/client";
 
 import { toast } from "@/app/_components/toast";
 import { callAction } from "@/lib/sync/callAction";
+import { useSyncedAction } from "@/lib/sync/useSyncedAction";
 
 import { updateStatusAction, reorderTaskAction } from "./tasks/[id]/actions";
 import { boardReducer, columnTasks, type BoardTask } from "./board-state";
@@ -49,7 +50,7 @@ export default function Board({
   members: { id: string; name: string }[];
 }) {
   const [optimistic, dispatch] = useOptimistic(tasks, boardReducer);
-  const [, startTransition] = useTransition();
+  const [, run] = useSyncedAction();
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -63,19 +64,19 @@ export default function Board({
     const task = optimistic.find((t) => t.id === taskId);
     if (!task || task.status === toStatus) return;
     const label = COLUMNS.find((c) => c.status === toStatus)!.label;
-    startTransition(async () => {
-      dispatch({ type: "move", taskId, toStatus });
-      try {
-        await callAction(() => updateStatusAction(taskId, slug, toStatus), {
+    run(
+      () =>
+        callAction(() => updateStatusAction(taskId, slug, toStatus), {
           type: "updateTaskStatus",
           args: [taskId, toStatus],
           entityId: taskId,
-        });
-        toast.success(`Moved “${task.title}” to ${label}`);
-      } catch {
-        toast.error("Couldn't move that task");
-      }
-    });
+        }),
+      "Couldn't move that task",
+      {
+        optimistic: () => dispatch({ type: "move", taskId, toStatus }),
+        onSuccess: () => toast.success(`Moved “${task.title}” to ${label}`),
+      },
+    );
   }
 
   function onDragStart(e: DragStartEvent) {
@@ -99,18 +100,16 @@ export default function Board({
             ? before + 1
             : 0;
     if (rank === active.rank) return;
-    startTransition(async () => {
-      dispatch({ type: "reorder", taskId, rank });
-      try {
-        await callAction(() => reorderTaskAction(taskId, slug, rank), {
+    run(
+      () =>
+        callAction(() => reorderTaskAction(taskId, slug, rank), {
           type: "reorderTask",
           args: [taskId, rank],
           entityId: taskId,
-        });
-      } catch {
-        toast.error("Couldn't reorder that task");
-      }
-    });
+        }),
+      "Couldn't reorder that task",
+      { optimistic: () => dispatch({ type: "reorder", taskId, rank }) },
+    );
   }
 
   function onDragEnd(e: DragEndEvent) {

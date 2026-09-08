@@ -6,6 +6,8 @@ import { PageHeader } from "@/app/_components/PageHeader";
 import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { getProjectMembership } from "@/lib/projects/mutations";
+import { getProjectBySlug, getNavProjects } from "@/lib/projects/queries";
+import { getNavNotifications } from "@/lib/notifications/queries";
 import { getBoardTasks, type BoardFilters } from "@/lib/tasks/queries";
 
 import Board from "./Board";
@@ -29,13 +31,10 @@ export default async function BoardPage({
   const { slug } = await params;
   const query = await searchParams;
 
-  const [project, navProjects] = await Promise.all([
-    prisma.project.findUnique({ where: { slug } }),
-    prisma.projectMember.findMany({
-      where: { userId: user.id },
-      include: { project: true },
-      orderBy: { project: { createdAt: "desc" } },
-    }),
+  const [project, navProjects, notifications] = await Promise.all([
+    getProjectBySlug(slug),
+    getNavProjects(user.id),
+    getNavNotifications(user.id),
   ]);
   if (!project) notFound();
 
@@ -72,6 +71,7 @@ export default async function BoardPage({
         user={{ name: user.name, email: user.email }}
         projects={navProjects.map((m) => ({ name: m.project.name, slug: m.project.slug }))}
         currentSlug={slug}
+        notifications={notifications}
       />
       <main className="container">
         <div className="stack">

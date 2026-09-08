@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 
-import { toast } from "@/app/_components/toast";
 import { callAction } from "@/lib/sync/callAction";
+import { useSyncedAction } from "@/lib/sync/useSyncedAction";
 
 import { editCommentAction, deleteCommentAction } from "./actions";
 
@@ -19,7 +19,7 @@ export function CommentActions({
   initial: string;
 }) {
   const [editing, setEditing] = useState(false);
-  const [pending, start] = useTransition();
+  const [pending, run] = useSyncedAction();
 
   if (editing) {
     return (
@@ -28,17 +28,15 @@ export function CommentActions({
         action={(formData) => {
           const value = String(formData.get("comment") ?? "");
           setEditing(false);
-          start(async () => {
-            try {
-              await callAction(() => editCommentAction(eventId, taskId, slug, value), {
+          run(
+            () =>
+              callAction(() => editCommentAction(eventId, taskId, slug, value), {
                 type: "editTaskComment",
                 args: [eventId, value],
                 entityId: taskId,
-              });
-            } catch {
-              toast.error("Couldn't save the comment");
-            }
-          });
+              }),
+            "Couldn't save the comment",
+          );
         }}
       >
         <textarea name="comment" defaultValue={initial} required className="input" autoFocus />
@@ -65,17 +63,15 @@ export function CommentActions({
         disabled={pending}
         onClick={() => {
           if (!confirm("Delete this comment?")) return;
-          start(async () => {
-            try {
-              await callAction(() => deleteCommentAction(eventId, taskId, slug), {
+          run(
+            () =>
+              callAction(() => deleteCommentAction(eventId, taskId, slug), {
                 type: "deleteTaskComment",
                 args: [eventId],
                 entityId: taskId,
-              });
-            } catch {
-              toast.error("Couldn't delete the comment");
-            }
-          });
+              }),
+            "Couldn't delete the comment",
+          );
         }}
       >
         Delete
