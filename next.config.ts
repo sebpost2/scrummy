@@ -24,11 +24,16 @@ const nextConfig: NextConfig = {
             // here — upgrade to a nonce-based policy if a future feature ever
             // renders untrusted content as markup.
             //
+            // 'unsafe-eval' is added on script-src only outside production:
+            // `next dev --webpack` wraps every module in eval() for its
+            // eval-source-map devtool, so without it the browser blocks all
+            // client JS and the app never hydrates. Production builds don't
+            // eval-wrap modules, so prod stays locked down.
+            //
             // No changes needed for the service worker or /api/sync: worker-src
             // and manifest-src both fall back to default-src 'self', and the
             // sync route is same-origin under connect-src 'self'.
-            value:
-              "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
+            value: `default-src 'self'; script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "production" ? "" : " 'unsafe-eval'"}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`,
           },
         ],
       },

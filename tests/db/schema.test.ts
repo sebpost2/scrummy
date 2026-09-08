@@ -4,16 +4,13 @@ import { describe, it, expect, afterEach, afterAll } from "vitest";
 
 import { prisma } from "@/lib/db/prisma";
 
-let userId: string | undefined;
-let projectId: string | undefined;
+import { createTestUser, trackProject, cleanupTestData } from "../helpers";
+
 let mutationId: string | undefined;
 
 afterEach(async () => {
-  if (projectId) await prisma.project.deleteMany({ where: { id: projectId } });
-  if (userId) await prisma.user.deleteMany({ where: { id: userId } });
+  await cleanupTestData();
   if (mutationId) await prisma.syncedMutation.deleteMany({ where: { id: mutationId } });
-  userId = undefined;
-  projectId = undefined;
   mutationId = undefined;
 });
 
@@ -23,10 +20,7 @@ afterAll(async () => {
 
 describe("schema", () => {
   it("creates a User, Project, ProjectMember, Task, and TaskEvent that all relate correctly", async () => {
-    const user = await prisma.user.create({
-      data: { email: `schema-${Date.now()}@example.com`, passwordHash: "x", name: "Test User" },
-    });
-    userId = user.id;
+    const user = await createTestUser({ name: "Test User" });
 
     const project = await prisma.project.create({
       data: {
@@ -36,7 +30,7 @@ describe("schema", () => {
         createdById: user.id,
       },
     });
-    projectId = project.id;
+    trackProject(project.id);
 
     await prisma.projectMember.create({
       data: { userId: user.id, projectId: project.id, role: "OWNER" },
@@ -63,10 +57,7 @@ describe("schema", () => {
   });
 
   it("tracks clientTimestamp on TaskEvent, rankUpdatedAt on Task, and dedups via SyncedMutation", async () => {
-    const user = await prisma.user.create({
-      data: { email: `schema2-${Date.now()}@example.com`, passwordHash: "x", name: "Test User 2" },
-    });
-    userId = user.id;
+    const user = await createTestUser({ name: "Test User 2" });
 
     const project = await prisma.project.create({
       data: {
@@ -76,7 +67,7 @@ describe("schema", () => {
         createdById: user.id,
       },
     });
-    projectId = project.id;
+    trackProject(project.id);
 
     const task = await prisma.task.create({
       data: { projectId: project.id, title: "Second task", createdById: user.id },

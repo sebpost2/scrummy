@@ -4,14 +4,14 @@ import { revalidatePath } from "next/cache";
 
 import { appOrigin } from "@/lib/auth/google";
 import { requireUser } from "@/lib/auth/session";
-import { prisma } from "@/lib/db/prisma";
 import { addProjectMemberByEmail, regenerateInviteToken, removeProjectMember } from "@/lib/projects/mutations";
+import { getProjectBySlug } from "@/lib/projects/queries";
 
 export type AddMemberState = { status: "idle" } | { status: "error"; message: string };
 
 export async function addMemberAction(slug: string, _prev: AddMemberState, formData: FormData): Promise<AddMemberState> {
   const user = await requireUser();
-  const project = await prisma.project.findUnique({ where: { slug } });
+  const project = await getProjectBySlug(slug);
   if (!project) return { status: "error", message: "Project not found." };
 
   const email = String(formData.get("email") ?? "").trim();
@@ -27,7 +27,7 @@ export async function removeMemberAction(
   targetUserId: string,
 ): Promise<{ ok: true } | { ok: false; message: string }> {
   const user = await requireUser();
-  const project = await prisma.project.findUnique({ where: { slug } });
+  const project = await getProjectBySlug(slug);
   if (!project) return { ok: false, message: "Project not found." };
 
   const result = await removeProjectMember(user.id, project.id, targetUserId);
@@ -39,7 +39,7 @@ export async function regenerateInviteTokenAction(
   slug: string,
 ): Promise<{ ok: true; url: string } | { ok: false; message: string }> {
   const user = await requireUser();
-  const project = await prisma.project.findUnique({ where: { slug } });
+  const project = await getProjectBySlug(slug);
   if (!project) return { ok: false, message: "Project not found." };
 
   const result = await regenerateInviteToken(user.id, project.id);

@@ -1,6 +1,6 @@
 import type { TaskStatus, TaskPriority, ProjectRole } from "@prisma/client";
 
-import { prisma } from "@/lib/db/prisma";
+import { getProjectBySlug } from "@/lib/projects/queries";
 import {
   createTask,
   updateTaskTitle,
@@ -29,17 +29,22 @@ import {
   leaveProject,
   updateMemberRole,
 } from "@/lib/projects/mutations";
-import type { OutboxMutationType } from "@/lib/sync/types";
 
 type Handler = (userId: string, args: unknown[], clientTimestamp: Date) => Promise<unknown>;
 
 async function projectIdFor(slug: string): Promise<string> {
-  const project = await prisma.project.findUnique({ where: { slug } });
+  const project = await getProjectBySlug(slug);
   if (!project) throw new Error("PROJECT_NOT_FOUND");
   return project.id;
 }
 
-export const MUTATION_REGISTRY: Record<OutboxMutationType, Handler> = {
+// To add a new offline-syncable mutation:
+// 1. Write the mutation function (lib/tasks or lib/projects).
+// 2. Add a key + handler below — its name becomes the new OutboxMutationType automatically.
+// 3. Add a server action that calls the mutation function directly (for the online path).
+// 4. Call the action through callAction() from the client, passing { type, args, entityId }
+//    matching the key and argument order used here.
+export const MUTATION_REGISTRY = {
   createTask: (userId, args) =>
     createTask(
       userId,
@@ -72,4 +77,6 @@ export const MUTATION_REGISTRY: Record<OutboxMutationType, Handler> = {
   leaveProject: async (userId, args) => leaveProject(userId, await projectIdFor(args[0] as string)),
   updateMemberRole: async (userId, args) =>
     updateMemberRole(userId, await projectIdFor(args[0] as string), args[1] as string, args[2] as ProjectRole),
-};
+} satisfies Record<string, Handler>;
+
+export type OutboxMutationType = keyof typeof MUTATION_REGISTRY;

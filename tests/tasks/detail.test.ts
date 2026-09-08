@@ -2,10 +2,8 @@ import { describe, it, expect, afterEach, afterAll, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { prisma } from "@/lib/db/prisma";
-import { createProject } from "@/lib/projects/mutations";
 import { createTask, updateTaskPriority, addTaskComment } from "@/lib/tasks/mutations";
 let userId: string | undefined;
-let projectId: string | undefined;
 vi.mock("@/lib/auth/session", async () => {
   const actual = await vi.importActual<typeof import("@/lib/auth/session")>("@/lib/auth/session");
   return {
@@ -15,10 +13,11 @@ vi.mock("@/lib/auth/session", async () => {
 });
 import TaskDetailPage from "@/app/projects/[slug]/tasks/[id]/page";
 
+import { createTestUser, createTestProject, cleanupTestData } from "../helpers";
+
 afterEach(async () => {
-  if (projectId) await prisma.project.deleteMany({ where: { id: projectId } });
-  if (userId) await prisma.user.deleteMany({ where: { id: userId } });
-  userId = projectId = undefined;
+  await cleanupTestData();
+  userId = undefined;
 });
 
 afterAll(async () => {
@@ -27,12 +26,9 @@ afterAll(async () => {
 
 describe("TaskDetailPage", () => {
   it("renders the task and its activity timeline newest-first", async () => {
-    const user = await prisma.user.create({
-      data: { email: `detail-${Date.now()}@example.com`, passwordHash: "x", name: "Ada" },
-    });
+    const user = await createTestUser({ name: "Ada" });
     userId = user.id;
-    const project = await createProject(user.id, "Detail Project");
-    projectId = project.id;
+    const project = await createTestProject(user.id, "Detail Project");
     const task = await createTask(user.id, project.id, { title: "Review the PR" });
     await addTaskComment(user.id, task.id, "Looks good");
     await updateTaskPriority(user.id, task.id, "HIGH");
@@ -51,12 +47,9 @@ describe("TaskDetailPage", () => {
   });
 
   it("returns notFound for a nonexistent task", async () => {
-    const user = await prisma.user.create({
-      data: { email: `detail404-${Date.now()}@example.com`, passwordHash: "x", name: "Ada" },
-    });
+    const user = await createTestUser({ name: "Ada" });
     userId = user.id;
-    const project = await createProject(user.id, "Detail Project 2");
-    projectId = project.id;
+    const project = await createTestProject(user.id, "Detail Project 2");
 
     let notFound: unknown;
     try {

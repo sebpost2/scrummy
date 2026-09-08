@@ -2,10 +2,7 @@ import { describe, it, expect, afterEach, afterAll, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { prisma } from "@/lib/db/prisma";
-import { createProject, addProjectMemberByEmail } from "@/lib/projects/mutations";
-let ownerId: string | undefined;
-let memberId: string | undefined;
-let projectId: string | undefined;
+import { addProjectMemberByEmail } from "@/lib/projects/mutations";
 let currentUserId: string | undefined;
 vi.mock("@/lib/auth/session", async () => {
   const actual = await vi.importActual<typeof import("@/lib/auth/session")>("@/lib/auth/session");
@@ -16,11 +13,11 @@ vi.mock("@/lib/auth/session", async () => {
 });
 import MembersPage from "@/app/projects/[slug]/members/page";
 
+import { createTestUser, createTestProject, cleanupTestData } from "../helpers";
+
 afterEach(async () => {
-  if (projectId) await prisma.project.deleteMany({ where: { id: projectId } });
-  if (ownerId) await prisma.user.deleteMany({ where: { id: ownerId } });
-  if (memberId) await prisma.user.deleteMany({ where: { id: memberId } });
-  ownerId = memberId = projectId = currentUserId = undefined;
+  await cleanupTestData();
+  currentUserId = undefined;
 });
 
 afterAll(async () => {
@@ -29,16 +26,9 @@ afterAll(async () => {
 
 describe("MembersPage", () => {
   it("lists current members for the owner", async () => {
-    const owner = await prisma.user.create({
-      data: { email: `members-owner-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
-    ownerId = owner.id;
-    const member = await prisma.user.create({
-      data: { email: `members-member-${Date.now()}@example.com`, passwordHash: "x", name: "Member" },
-    });
-    memberId = member.id;
-    const project = await createProject(owner.id, "Members Project");
-    projectId = project.id;
+    const owner = await createTestUser({ name: "Owner" });
+    const member = await createTestUser({ name: "Member" });
+    const project = await createTestProject(owner.id, "Members Project");
     await addProjectMemberByEmail(owner.id, project.id, member.email);
     currentUserId = owner.id;
 
@@ -52,16 +42,9 @@ describe("MembersPage", () => {
   });
 
   it("returns notFound for a non-owner", async () => {
-    const owner = await prisma.user.create({
-      data: { email: `members-owner2-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
-    ownerId = owner.id;
-    const member = await prisma.user.create({
-      data: { email: `members-member2-${Date.now()}@example.com`, passwordHash: "x", name: "Member" },
-    });
-    memberId = member.id;
-    const project = await createProject(owner.id, "Members Project 2");
-    projectId = project.id;
+    const owner = await createTestUser({ name: "Owner" });
+    const member = await createTestUser({ name: "Member" });
+    const project = await createTestProject(owner.id, "Members Project 2");
     await addProjectMemberByEmail(owner.id, project.id, member.email);
     currentUserId = member.id;
 

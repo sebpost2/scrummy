@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach, afterAll } from "vitest";
 
 import { prisma } from "@/lib/db/prisma";
-import { createProject, addProjectMemberByEmail } from "@/lib/projects/mutations";
+import { addProjectMemberByEmail } from "@/lib/projects/mutations";
 import {
   createTask,
   reassignTask,
@@ -12,32 +12,18 @@ import {
 } from "@/lib/tasks/mutations";
 import { getBoardTasks, getMyTasks, getTaskWithEvents } from "@/lib/tasks/queries";
 
-let ownerId: string | undefined;
-let memberId: string | undefined;
-let projectId: string | undefined;
+import { createTestUser, createTestProject, cleanupTestData } from "../helpers";
 
-afterEach(async () => {
-  if (projectId) await prisma.project.deleteMany({ where: { id: projectId } });
-  if (ownerId) await prisma.user.deleteMany({ where: { id: ownerId } });
-  if (memberId) await prisma.user.deleteMany({ where: { id: memberId } });
-  ownerId = memberId = projectId = undefined;
-});
+afterEach(cleanupTestData);
 
 afterAll(async () => {
   await prisma.$disconnect();
 });
 
 async function setup() {
-  const owner = await prisma.user.create({
-    data: { email: `q-owner-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-  });
-  ownerId = owner.id;
-  const member = await prisma.user.create({
-    data: { email: `q-member-${Date.now()}@example.com`, passwordHash: "x", name: "Member" },
-  });
-  memberId = member.id;
-  const project = await createProject(owner.id, "Query Project");
-  projectId = project.id;
+  const owner = await createTestUser({ name: "Owner" });
+  const member = await createTestUser({ name: "Member" });
+  const project = await createTestProject(owner.id, "Query Project");
   await addProjectMemberByEmail(owner.id, project.id, member.email);
   return { owner, member, project };
 }

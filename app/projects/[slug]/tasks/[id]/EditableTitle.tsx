@@ -1,9 +1,10 @@
 "use client";
 
-import { useOptimistic, useState, useTransition } from "react";
+import { useOptimistic, useState } from "react";
 
 import { toast } from "@/app/_components/toast";
 import { callAction } from "@/lib/sync/callAction";
+import { useSyncedAction } from "@/lib/sync/useSyncedAction";
 
 import { updateTitleAction } from "./actions";
 
@@ -18,25 +19,22 @@ export function EditableTitle({
 }) {
   const [title, setOpt] = useOptimistic(initial);
   const [editing, setEditing] = useState(false);
-  const [, start] = useTransition();
+  const [, run] = useSyncedAction();
 
   function save(value: string) {
     setEditing(false);
     const next = value.trim();
     if (!next || next === title) return;
-    start(async () => {
-      setOpt(next);
-      try {
-        await callAction(() => updateTitleAction(taskId, slug, next), {
+    run(
+      () =>
+        callAction(() => updateTitleAction(taskId, slug, next), {
           type: "updateTaskTitle",
           args: [taskId, next],
           entityId: taskId,
-        });
-        toast.success("Updated title");
-      } catch {
-        toast.error("Couldn't update title");
-      }
-    });
+        }),
+      "Couldn't update title",
+      { optimistic: () => setOpt(next), onSuccess: () => toast.success("Updated title") },
+    );
   }
 
   if (editing) {

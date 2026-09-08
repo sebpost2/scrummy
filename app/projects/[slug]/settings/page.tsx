@@ -6,6 +6,7 @@ import { PageHeader } from "@/app/_components/PageHeader";
 import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { getProjectMembership } from "@/lib/projects/mutations";
+import { getProjectBySlug, getNavProjects } from "@/lib/projects/queries";
 
 import { RenameProjectForm } from "./RenameProjectForm";
 import { MemberRoleToggle } from "./MemberRoleToggle";
@@ -19,7 +20,7 @@ export default async function ProjectSettingsPage({
   const user = await requireUser();
   const { slug } = await params;
 
-  const project = await prisma.project.findUnique({ where: { slug } });
+  const project = await getProjectBySlug(slug);
   if (!project) notFound();
 
   const membership = await getProjectMembership(user.id, project.id);
@@ -33,11 +34,7 @@ export default async function ProjectSettingsPage({
   });
   const ownerCount = members.filter((m) => m.role === "OWNER").length;
 
-  const navProjects = await prisma.projectMember.findMany({
-    where: { userId: user.id },
-    include: { project: true },
-    orderBy: { project: { createdAt: "desc" } },
-  });
+  const navProjects = await getNavProjects(user.id);
 
   return (
     <>

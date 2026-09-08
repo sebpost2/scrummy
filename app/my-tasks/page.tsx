@@ -3,18 +3,14 @@ import { PageHeader } from "@/app/_components/PageHeader";
 import { EmptyState } from "@/app/_components/EmptyState";
 import { TaskRow } from "@/app/_components/TaskCard";
 import { requireUser } from "@/lib/auth/session";
-import { prisma } from "@/lib/db/prisma";
+import { getNavProjects } from "@/lib/projects/queries";
 import { getMyTasks } from "@/lib/tasks/queries";
 
 export default async function MyTasksPage() {
   const user = await requireUser();
   const tasks = await getMyTasks(user.id);
 
-  const navProjects = await prisma.projectMember.findMany({
-    where: { userId: user.id },
-    include: { project: true },
-    orderBy: { project: { createdAt: "desc" } },
-  });
+  const navProjects = await getNavProjects(user.id);
 
   const byProject = new Map<string, { name: string; slug: string; tasks: typeof tasks }>();
   for (const task of tasks) {

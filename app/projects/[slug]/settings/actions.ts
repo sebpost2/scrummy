@@ -5,18 +5,18 @@ import { redirect } from "next/navigation";
 import type { ProjectRole } from "@prisma/client";
 
 import { requireUser } from "@/lib/auth/session";
-import { prisma } from "@/lib/db/prisma";
 import {
   renameProject,
   deleteProject,
   leaveProject,
   updateMemberRole,
 } from "@/lib/projects/mutations";
+import { getProjectBySlug } from "@/lib/projects/queries";
 
 type Result = { ok: true } | { ok: false; message: string };
 
 async function projectIdFor(slug: string): Promise<string | null> {
-  const project = await prisma.project.findUnique({ where: { slug } });
+  const project = await getProjectBySlug(slug);
   return project?.id ?? null;
 }
 

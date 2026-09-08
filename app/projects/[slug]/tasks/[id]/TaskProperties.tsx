@@ -1,10 +1,11 @@
 "use client";
 
-import { useOptimistic, useTransition } from "react";
+import { useOptimistic } from "react";
 import type { Task } from "@prisma/client";
 
 import { toast } from "@/app/_components/toast";
 import { callAction } from "@/lib/sync/callAction";
+import { useSyncedAction } from "@/lib/sync/useSyncedAction";
 
 import {
   reassignTaskAction,
@@ -33,17 +34,12 @@ export function TaskProperties({
   members: { id: string; name: string }[];
 }) {
   const [opt, setOpt] = useOptimistic(task);
-  const [, start] = useTransition();
+  const [, syncedRun] = useSyncedAction();
 
   function run(patch: Partial<PropTask>, label: string, fn: () => Promise<void>) {
-    start(async () => {
-      setOpt({ ...opt, ...patch });
-      try {
-        await fn();
-        toast.success(`Updated ${label}`);
-      } catch {
-        toast.error(`Couldn't update ${label}`);
-      }
+    syncedRun(fn, `Couldn't update ${label}`, {
+      optimistic: () => setOpt({ ...opt, ...patch }),
+      onSuccess: () => toast.success(`Updated ${label}`),
     });
   }
 

@@ -3,7 +3,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import type { ReactElement } from "react";
 
 import { prisma } from "@/lib/db/prisma";
-import { createProject } from "@/lib/projects/mutations";
 let currentUser: { id: string; name: string; email: string } | null = null;
 vi.mock("@/lib/auth/session", async () => {
   const actual = await vi.importActual<typeof import("@/lib/auth/session")>("@/lib/auth/session");
@@ -11,15 +10,10 @@ vi.mock("@/lib/auth/session", async () => {
 });
 import InvitePage from "@/app/invite/[token]/page";
 
-let ownerId: string | undefined;
-let joinerId: string | undefined;
-let projectId: string | undefined;
+import { createTestUser, createTestProject, cleanupTestData } from "../helpers";
 
 afterEach(async () => {
-  if (projectId) await prisma.project.deleteMany({ where: { id: projectId } });
-  if (ownerId) await prisma.user.deleteMany({ where: { id: ownerId } });
-  if (joinerId) await prisma.user.deleteMany({ where: { id: joinerId } });
-  ownerId = joinerId = projectId = undefined;
+  await cleanupTestData();
   currentUser = null;
 });
 
@@ -35,12 +29,8 @@ describe("InvitePage", () => {
   });
 
   it("redirects an anonymous visitor to signup with the token attached", async () => {
-    const owner = await prisma.user.create({
-      data: { email: `invite-owner-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
-    ownerId = owner.id;
-    const project = await createProject(owner.id, "Invite Project");
-    projectId = project.id;
+    const owner = await createTestUser({ name: "Owner" });
+    const project = await createTestProject(owner.id, "Invite Project");
     currentUser = null;
 
     let redirected: unknown;
@@ -55,16 +45,9 @@ describe("InvitePage", () => {
   });
 
   it("joins a logged-in visitor and redirects to the project board", async () => {
-    const owner = await prisma.user.create({
-      data: { email: `invite-owner2-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
-    ownerId = owner.id;
-    const project = await createProject(owner.id, "Invite Project 2");
-    projectId = project.id;
-    const joiner = await prisma.user.create({
-      data: { email: `invite-joiner-${Date.now()}@example.com`, passwordHash: "x", name: "Joiner" },
-    });
-    joinerId = joiner.id;
+    const owner = await createTestUser({ name: "Owner" });
+    const project = await createTestProject(owner.id, "Invite Project 2");
+    const joiner = await createTestUser({ name: "Joiner" });
     currentUser = joiner;
 
     let redirected: unknown;

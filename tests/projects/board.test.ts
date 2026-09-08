@@ -2,12 +2,8 @@ import { describe, it, expect, afterEach, afterAll, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { prisma } from "@/lib/db/prisma";
-import { createProject } from "@/lib/projects/mutations";
 import { createTask } from "@/lib/tasks/mutations";
 let userId: string | undefined;
-let outsiderId: string | undefined;
-let ownerId: string | undefined;
-let projectId: string | undefined;
 vi.mock("@/lib/auth/session", async () => {
   const actual = await vi.importActual<typeof import("@/lib/auth/session")>("@/lib/auth/session");
   return {
@@ -17,12 +13,11 @@ vi.mock("@/lib/auth/session", async () => {
 });
 import BoardPage from "@/app/projects/[slug]/page";
 
+import { createTestUser, createTestProject, cleanupTestData } from "../helpers";
+
 afterEach(async () => {
-  if (projectId) await prisma.project.deleteMany({ where: { id: projectId } });
-  if (userId) await prisma.user.deleteMany({ where: { id: userId } });
-  if (outsiderId) await prisma.user.deleteMany({ where: { id: outsiderId } });
-  if (ownerId) await prisma.user.deleteMany({ where: { id: ownerId } });
-  userId = outsiderId = ownerId = projectId = undefined;
+  await cleanupTestData();
+  userId = undefined;
 });
 
 afterAll(async () => {
@@ -31,12 +26,9 @@ afterAll(async () => {
 
 describe("BoardPage", () => {
   it("renders tasks grouped under their status column", async () => {
-    const user = await prisma.user.create({
-      data: { email: `board-${Date.now()}@example.com`, passwordHash: "x", name: "Ada" },
-    });
+    const user = await createTestUser({ name: "Ada" });
     userId = user.id;
-    const project = await createProject(user.id, "Board Project");
-    projectId = project.id;
+    const project = await createTestProject(user.id, "Board Project");
     await createTask(user.id, project.id, { title: "Do the thing" });
 
     const element = await BoardPage({
@@ -50,17 +42,10 @@ describe("BoardPage", () => {
   });
 
   it("returns notFound for a non-member", async () => {
-    const owner = await prisma.user.create({
-      data: { email: `board-owner-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
-    const outsider = await prisma.user.create({
-      data: { email: `board-outsider-${Date.now()}@example.com`, passwordHash: "x", name: "Outsider" },
-    });
-    outsiderId = outsider.id;
+    const owner = await createTestUser({ name: "Owner" });
+    const outsider = await createTestUser({ name: "Outsider" });
     userId = outsider.id;
-    ownerId = owner.id;
-    const project = await createProject(owner.id, "Private Project");
-    projectId = project.id;
+    const project = await createTestProject(owner.id, "Private Project");
 
     let notFound: unknown;
     try {

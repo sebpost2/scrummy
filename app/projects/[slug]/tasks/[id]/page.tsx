@@ -3,8 +3,8 @@ import { notFound } from "next/navigation";
 import { Nav } from "@/app/_components/Nav";
 import { requireUser } from "@/lib/auth/session";
 import { getProjectMembership } from "@/lib/projects/mutations";
+import { getProjectBySlug, getNavProjects } from "@/lib/projects/queries";
 import { getTaskWithEvents } from "@/lib/tasks/queries";
-import { prisma } from "@/lib/db/prisma";
 
 import { TaskProperties } from "./TaskProperties";
 import { CommentForm } from "./CommentForm";
@@ -23,17 +23,13 @@ export default async function TaskDetailPage({
   const { slug, id } = await params;
 
   const detail = await getTaskWithEvents(id);
-  const project = await prisma.project.findUnique({ where: { slug } });
+  const project = await getProjectBySlug(slug);
   if (!detail || !project || detail.project.id !== project.id) notFound();
 
   const membership = await getProjectMembership(user.id, detail.project.id);
   if (!membership) notFound();
 
-  const navProjects = await prisma.projectMember.findMany({
-    where: { userId: user.id },
-    include: { project: true },
-    orderBy: { project: { createdAt: "desc" } },
-  });
+  const navProjects = await getNavProjects(user.id);
 
   return (
     <>

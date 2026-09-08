@@ -8,19 +8,13 @@ vi.mock("@/lib/auth/session", async () => {
 
 import { prisma } from "@/lib/db/prisma";
 import { getSessionUser } from "@/lib/auth/session";
-import { createProject } from "@/lib/projects/mutations";
 import { createTask } from "@/lib/tasks/mutations";
 import { POST } from "@/app/api/sync/route";
 
-let ownerId: string | undefined;
-let outsiderId: string | undefined;
-let projectId: string | undefined;
+import { createTestUser, createTestProject, cleanupTestData } from "../helpers";
 
 afterEach(async () => {
-  if (projectId) await prisma.project.deleteMany({ where: { id: projectId } });
-  if (ownerId) await prisma.user.deleteMany({ where: { id: ownerId } });
-  if (outsiderId) await prisma.user.deleteMany({ where: { id: outsiderId } });
-  ownerId = outsiderId = projectId = undefined;
+  await cleanupTestData();
   vi.mocked(getSessionUser).mockReset();
 });
 
@@ -42,13 +36,9 @@ describe("POST /api/sync", () => {
   });
 
   it("applies a registered mutation and dedups a repeat with the same id", async () => {
-    const owner = await prisma.user.create({
-      data: { email: `sync-owner-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
-    ownerId = owner.id;
+    const owner = await createTestUser({ name: "Owner" });
     vi.mocked(getSessionUser).mockResolvedValue(owner);
-    const project = await createProject(owner.id, "Sync Project");
-    projectId = project.id;
+    const project = await createTestProject(owner.id, "Sync Project");
     const task = await createTask(owner.id, project.id, { title: "Sync task" });
 
     const body = {
@@ -69,17 +59,10 @@ describe("POST /api/sync", () => {
   });
 
   it("buckets a domain error as permanent, not transient", async () => {
-    const owner = await prisma.user.create({
-      data: { email: `sync-owner2-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
-    ownerId = owner.id;
-    const outsider = await prisma.user.create({
-      data: { email: `sync-outsider-${Date.now()}@example.com`, passwordHash: "x", name: "Outsider" },
-    });
-    outsiderId = outsider.id;
+    const owner = await createTestUser({ name: "Owner" });
+    const outsider = await createTestUser({ name: "Outsider" });
     vi.mocked(getSessionUser).mockResolvedValue(owner);
-    const project = await createProject(owner.id, "Sync Project 2");
-    projectId = project.id;
+    const project = await createTestProject(owner.id, "Sync Project 2");
     const task = await createTask(owner.id, project.id, { title: "Sync task 2" });
 
     const res = await POST(
@@ -98,13 +81,9 @@ describe("POST /api/sync", () => {
   });
 
   it("parses a due-date string from the JSON wire format (not a Date instance)", async () => {
-    const owner = await prisma.user.create({
-      data: { email: `sync-owner4-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
-    ownerId = owner.id;
+    const owner = await createTestUser({ name: "Owner" });
     vi.mocked(getSessionUser).mockResolvedValue(owner);
-    const project = await createProject(owner.id, "Sync Project 4");
-    projectId = project.id;
+    const project = await createTestProject(owner.id, "Sync Project 4");
     const task = await createTask(owner.id, project.id, { title: "Sync task 4" });
 
     const t0 = Date.now();
@@ -135,17 +114,10 @@ describe("POST /api/sync", () => {
   });
 
   it("resolves a project slug to id and applies removeProjectMember", async () => {
-    const owner = await prisma.user.create({
-      data: { email: `sync-owner5-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
-    ownerId = owner.id;
-    const member = await prisma.user.create({
-      data: { email: `sync-member-${Date.now()}@example.com`, passwordHash: "x", name: "Member" },
-    });
-    outsiderId = member.id;
+    const owner = await createTestUser({ name: "Owner" });
+    const member = await createTestUser({ name: "Member" });
     vi.mocked(getSessionUser).mockResolvedValue(owner);
-    const project = await createProject(owner.id, "Sync Project 5");
-    projectId = project.id;
+    const project = await createTestProject(owner.id, "Sync Project 5");
     await prisma.projectMember.create({ data: { userId: member.id, projectId: project.id, role: "MEMBER" } });
 
     const res = await POST(
@@ -165,10 +137,7 @@ describe("POST /api/sync", () => {
   });
 
   it("buckets an unresolvable project slug as permanent, not transient", async () => {
-    const owner = await prisma.user.create({
-      data: { email: `sync-owner6-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
-    ownerId = owner.id;
+    const owner = await createTestUser({ name: "Owner" });
     vi.mocked(getSessionUser).mockResolvedValue(owner);
 
     const res = await POST(
@@ -187,10 +156,7 @@ describe("POST /api/sync", () => {
   });
 
   it("returns 400 for an unknown mutation type", async () => {
-    const owner = await prisma.user.create({
-      data: { email: `sync-owner3-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
-    ownerId = owner.id;
+    const owner = await createTestUser({ name: "Owner" });
     vi.mocked(getSessionUser).mockResolvedValue(owner);
 
     const res = await POST(

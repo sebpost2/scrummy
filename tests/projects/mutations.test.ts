@@ -14,16 +14,9 @@ import {
   joinProjectByInviteToken,
 } from "@/lib/projects/mutations";
 
-let ownerId: string | undefined;
-let memberId: string | undefined;
-let projectId: string | undefined;
+import { createTestUser, createTestProject, trackProject, cleanupTestData } from "../helpers";
 
-afterEach(async () => {
-  if (projectId) await prisma.project.deleteMany({ where: { id: projectId } });
-  if (ownerId) await prisma.user.deleteMany({ where: { id: ownerId } });
-  if (memberId) await prisma.user.deleteMany({ where: { id: memberId } });
-  ownerId = memberId = projectId = undefined;
-});
+afterEach(cleanupTestData);
 
 afterAll(async () => {
   await prisma.$disconnect();
@@ -31,13 +24,9 @@ afterAll(async () => {
 
 describe("createProject", () => {
   it("creates a Project and makes the creator its OWNER", async () => {
-    const owner = await prisma.user.create({
-      data: { email: `owner-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
-    ownerId = owner.id;
+    const owner = await createTestUser({ name: "Owner" });
 
-    const project = await createProject(owner.id, "My Project");
-    projectId = project.id;
+    const project = await createTestProject(owner.id, "My Project");
 
     expect(project.slug).toMatch(/^my-project-[a-f0-9]{6}$/);
     const membership = await getProjectMembership(owner.id, project.id);
@@ -45,13 +34,9 @@ describe("createProject", () => {
   });
 
   it("generates a unique invite token", async () => {
-    const owner = await prisma.user.create({
-      data: { email: `owner-invite-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
-    ownerId = owner.id;
+    const owner = await createTestUser({ name: "Owner" });
 
-    const project = await createProject(owner.id, "Invite Token Project");
-    projectId = project.id;
+    const project = await createTestProject(owner.id, "Invite Token Project");
 
     expect(project.inviteToken).toMatch(/^[a-f0-9]{32}$/);
   });
@@ -59,16 +44,9 @@ describe("createProject", () => {
 
 describe("addProjectMemberByEmail", () => {
   it("adds an existing user as a MEMBER", async () => {
-    const owner = await prisma.user.create({
-      data: { email: `owner2-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
-    ownerId = owner.id;
-    const member = await prisma.user.create({
-      data: { email: `member-${Date.now()}@example.com`, passwordHash: "x", name: "Member" },
-    });
-    memberId = member.id;
-    const project = await createProject(owner.id, "Shared Project");
-    projectId = project.id;
+    const owner = await createTestUser({ name: "Owner" });
+    const member = await createTestUser({ name: "Member" });
+    const project = await createTestProject(owner.id, "Shared Project");
 
     const result = await addProjectMemberByEmail(owner.id, project.id, member.email);
 
@@ -78,12 +56,8 @@ describe("addProjectMemberByEmail", () => {
   });
 
   it("fails with a helpful message when no account exists for that email", async () => {
-    const owner = await prisma.user.create({
-      data: { email: `owner3-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
-    ownerId = owner.id;
-    const project = await createProject(owner.id, "Solo Project");
-    projectId = project.id;
+    const owner = await createTestUser({ name: "Owner" });
+    const project = await createTestProject(owner.id, "Solo Project");
 
     const result = await addProjectMemberByEmail(owner.id, project.id, "nobody@example.com");
 
@@ -91,16 +65,9 @@ describe("addProjectMemberByEmail", () => {
   });
 
   it("rejects a non-OWNER trying to add a member", async () => {
-    const owner = await prisma.user.create({
-      data: { email: `owner4-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
-    ownerId = owner.id;
-    const member = await prisma.user.create({
-      data: { email: `member2-${Date.now()}@example.com`, passwordHash: "x", name: "Member" },
-    });
-    memberId = member.id;
-    const project = await createProject(owner.id, "Locked Project");
-    projectId = project.id;
+    const owner = await createTestUser({ name: "Owner" });
+    const member = await createTestUser({ name: "Member" });
+    const project = await createTestProject(owner.id, "Locked Project");
     await addProjectMemberByEmail(owner.id, project.id, member.email);
 
     const result = await addProjectMemberByEmail(member.id, project.id, "someoneelse@example.com");
@@ -111,16 +78,9 @@ describe("addProjectMemberByEmail", () => {
 
 describe("removeProjectMember", () => {
   it("lets an owner remove a member", async () => {
-    const owner = await prisma.user.create({
-      data: { email: `rm-owner-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
-    ownerId = owner.id;
-    const member = await prisma.user.create({
-      data: { email: `rm-member-${Date.now()}@example.com`, passwordHash: "x", name: "Member" },
-    });
-    memberId = member.id;
-    const project = await createProject(owner.id, "Removable Project");
-    projectId = project.id;
+    const owner = await createTestUser({ name: "Owner" });
+    const member = await createTestUser({ name: "Member" });
+    const project = await createTestProject(owner.id, "Removable Project");
     await addProjectMemberByEmail(owner.id, project.id, member.email);
 
     const result = await removeProjectMember(owner.id, project.id, member.id);
@@ -130,16 +90,9 @@ describe("removeProjectMember", () => {
   });
 
   it("rejects a non-owner", async () => {
-    const owner = await prisma.user.create({
-      data: { email: `rm-owner2-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
-    ownerId = owner.id;
-    const member = await prisma.user.create({
-      data: { email: `rm-member2-${Date.now()}@example.com`, passwordHash: "x", name: "Member" },
-    });
-    memberId = member.id;
-    const project = await createProject(owner.id, "Guarded Project");
-    projectId = project.id;
+    const owner = await createTestUser({ name: "Owner" });
+    const member = await createTestUser({ name: "Member" });
+    const project = await createTestProject(owner.id, "Guarded Project");
     await addProjectMemberByEmail(owner.id, project.id, member.email);
 
     const result = await removeProjectMember(member.id, project.id, owner.id);
@@ -149,12 +102,8 @@ describe("removeProjectMember", () => {
   });
 
   it("refuses to remove an owner", async () => {
-    const owner = await prisma.user.create({
-      data: { email: `rm-owner3-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
-    ownerId = owner.id;
-    const project = await createProject(owner.id, "Solo Owner Project");
-    projectId = project.id;
+    const owner = await createTestUser({ name: "Owner" });
+    const project = await createTestProject(owner.id, "Solo Owner Project");
 
     const result = await removeProjectMember(owner.id, project.id, owner.id);
 
@@ -164,16 +113,9 @@ describe("removeProjectMember", () => {
 });
 
 async function ownerAndMember(tag: string) {
-  const owner = await prisma.user.create({
-    data: { email: `${tag}-owner-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-  });
-  ownerId = owner.id;
-  const member = await prisma.user.create({
-    data: { email: `${tag}-member-${Date.now()}@example.com`, passwordHash: "x", name: "Member" },
-  });
-  memberId = member.id;
-  const project = await createProject(owner.id, `${tag} Project`);
-  projectId = project.id;
+  const owner = await createTestUser({ name: "Owner" });
+  const member = await createTestUser({ name: "Member" });
+  const project = await createTestProject(owner.id, `${tag} Project`);
   await addProjectMemberByEmail(owner.id, project.id, member.email);
   return { owner, member, project };
 }
@@ -234,12 +176,8 @@ describe("deleteProject", () => {
 
 describe("regenerateInviteToken", () => {
   it("lets an owner regenerate the invite token", async () => {
-    const owner = await prisma.user.create({
-      data: { email: `regen-owner-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
-    ownerId = owner.id;
-    const project = await createProject(owner.id, "Regen Project");
-    projectId = project.id;
+    const owner = await createTestUser({ name: "Owner" });
+    const project = await createTestProject(owner.id, "Regen Project");
 
     const result = await regenerateInviteToken(owner.id, project.id);
 
@@ -249,16 +187,9 @@ describe("regenerateInviteToken", () => {
   });
 
   it("rejects a non-owner", async () => {
-    const owner = await prisma.user.create({
-      data: { email: `regen-owner2-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
-    ownerId = owner.id;
-    const member = await prisma.user.create({
-      data: { email: `regen-member-${Date.now()}@example.com`, passwordHash: "x", name: "Member" },
-    });
-    memberId = member.id;
-    const project = await createProject(owner.id, "Regen Guarded Project");
-    projectId = project.id;
+    const owner = await createTestUser({ name: "Owner" });
+    const member = await createTestUser({ name: "Member" });
+    const project = await createTestProject(owner.id, "Regen Guarded Project");
     await addProjectMemberByEmail(owner.id, project.id, member.email);
 
     const result = await regenerateInviteToken(member.id, project.id);
@@ -269,16 +200,9 @@ describe("regenerateInviteToken", () => {
 
 describe("joinProjectByInviteToken", () => {
   it("adds the visitor as a MEMBER and returns the project slug", async () => {
-    const owner = await prisma.user.create({
-      data: { email: `join-owner-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
-    ownerId = owner.id;
-    const project = await createProject(owner.id, "Join Project");
-    projectId = project.id;
-    const joiner = await prisma.user.create({
-      data: { email: `join-member-${Date.now()}@example.com`, passwordHash: "x", name: "Joiner" },
-    });
-    memberId = joiner.id;
+    const owner = await createTestUser({ name: "Owner" });
+    const project = await createTestProject(owner.id, "Join Project");
+    const joiner = await createTestUser({ name: "Joiner" });
 
     const result = await joinProjectByInviteToken(joiner.id, project.inviteToken);
 
@@ -287,12 +211,8 @@ describe("joinProjectByInviteToken", () => {
   });
 
   it("returns ok:false for an unknown token", async () => {
-    const owner = await prisma.user.create({
-      data: { email: `join-owner2-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
-    ownerId = owner.id;
-    const project = await createProject(owner.id, "Join Guarded Project");
-    projectId = project.id;
+    const owner = await createTestUser({ name: "Owner" });
+    await createTestProject(owner.id, "Join Guarded Project");
 
     const result = await joinProjectByInviteToken(owner.id, "not-a-real-token");
 
@@ -300,12 +220,8 @@ describe("joinProjectByInviteToken", () => {
   });
 
   it("is idempotent and never downgrades an existing owner", async () => {
-    const owner = await prisma.user.create({
-      data: { email: `join-owner3-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
-    ownerId = owner.id;
-    const project = await createProject(owner.id, "Join Idempotent Project");
-    projectId = project.id;
+    const owner = await createTestUser({ name: "Owner" });
+    const project = await createTestProject(owner.id, "Join Idempotent Project");
 
     await joinProjectByInviteToken(owner.id, project.inviteToken);
     await joinProjectByInviteToken(owner.id, project.inviteToken);
@@ -316,16 +232,12 @@ describe("joinProjectByInviteToken", () => {
 
 describe("createProject — client-supplied id", () => {
   it("uses a client-supplied id when given (for offline-created projects)", async () => {
-    const user = await prisma.user.create({
-      data: { email: `create-project-${Date.now()}@example.com`, passwordHash: "x", name: "Owner" },
-    });
+    const user = await createTestUser({ name: "Owner" });
     const clientId = `client-project-${Date.now()}`;
 
     const project = await createProject(user.id, "Offline Project", clientId);
+    trackProject(project.id);
 
     expect(project.id).toBe(clientId);
-
-    await prisma.project.deleteMany({ where: { id: project.id } });
-    await prisma.user.deleteMany({ where: { id: user.id } });
   });
 });
