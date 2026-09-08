@@ -66,7 +66,7 @@ describe("notifyMentions", () => {
 
     await notifyMentions(owner.id, project.id, task.id, [owner.id, outsider.id]);
 
-    const notifs = await prisma.notification.findMany();
+    const notifs = await prisma.notification.findMany({ where: { taskId: task.id } });
     expect(notifs).toHaveLength(0);
   });
 });

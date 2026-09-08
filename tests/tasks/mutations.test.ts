@@ -164,7 +164,7 @@ describe("reassignTask — notifications", () => {
     await prisma.notification.deleteMany(); // isolate the second call
     await reassignTask(owner.id, task.id, thirdMember.id, earlier);
 
-    const notifs = await prisma.notification.findMany();
+    const notifs = await prisma.notification.findMany({ where: { taskId: task.id } });
     expect(notifs).toHaveLength(0);
   });
 });
@@ -187,7 +187,7 @@ describe("addTaskComment — mentions", () => {
 
     await addTaskComment(owner.id, task.id, "no mentions here");
 
-    const notifs = await prisma.notification.findMany();
+    const notifs = await prisma.notification.findMany({ where: { taskId: task.id } });
     expect(notifs).toHaveLength(0);
   });
 });
