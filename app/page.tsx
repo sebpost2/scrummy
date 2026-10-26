@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { startDemo } from "./login/actions";
+
 export default function HomePage() {
   return (
     <main className="hero">
@@ -14,7 +16,12 @@ export default function HomePage() {
           every task, so you can always see how the work got done.
         </p>
         <div className="hero__cta">
-          <Link className="button" href="/signup">
+          <form action={startDemo}>
+            <button className="button" type="submit">
+              Try the demo — no sign-up
+            </button>
+          </form>
+          <Link className="button button--secondary" href="/signup">
             Create an account
           </Link>
           <Link className="button button--secondary" href="/login">

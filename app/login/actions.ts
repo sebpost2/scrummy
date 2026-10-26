@@ -7,6 +7,7 @@ import { verifyPassword } from "@/lib/crypto/password";
 import { createSession, destroySession } from "@/lib/auth/session";
 import { allow } from "@/lib/auth/rateLimit";
 import { joinProjectByInviteToken } from "@/lib/projects/mutations";
+import { createDemoWorkspace } from "@/lib/demo/workspace";
 
 export type LoginState = { status: "idle" } | { status: "error"; message: string };
 
@@ -44,6 +45,16 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
   }
 
   redirect("/projects");
+}
+
+/** "Try the demo": a throwaway account with a seeded board, logged in, no sign-up. */
+export async function startDemo(): Promise<void> {
+  // Each click writes a few rows, so cap it per IP.
+  if (!(await allow("demo", 5, 60_000))) redirect("/login?error=demo_throttled");
+
+  const { userId, slug } = await createDemoWorkspace();
+  await createSession(userId);
+  redirect(`/projects/${slug}`);
 }
 
 export async function logout(): Promise<void> {

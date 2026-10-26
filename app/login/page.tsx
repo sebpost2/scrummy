@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { startDemo } from "./actions";
 import { LoginForm } from "./LoginForm";
 
 export default async function LoginPage({
@@ -30,6 +31,14 @@ export default async function LoginPage({
         <a href="/api/auth/google" className="button button--secondary auth__google">
           Continue with Google
         </a>
+        <form action={startDemo}>
+          <button type="submit" className="button button--secondary auth__google">
+            Try the demo — no sign-up
+          </button>
+        </form>
+        {error === "demo_throttled" && (
+          <p className="form-error">Too many demo sessions from here. Wait a minute and try again.</p>
+        )}
         <p className="auth__alt">
           No account? <Link href={invite ? `/signup?invite=${invite}` : "/signup"}>Create one</Link>
         </p>

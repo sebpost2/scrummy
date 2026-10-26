@@ -36,6 +36,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "Scrummy",
   description: "A small task tracker with traceability.",
+  icons: { icon: "/icon.svg", apple: "/apple-touch-icon.png" },
   appleWebApp: {
     title: "Scrummy",
     statusBarStyle: "black-translucent",
