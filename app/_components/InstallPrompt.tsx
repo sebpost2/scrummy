@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { X } from "lucide-react";
 
 import IconButton from "@/app/_components/IconButton";
@@ -15,21 +15,17 @@ interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
 }
 
+const subscribeNothing = () => () => {};
+
 export default function InstallPrompt() {
-  const [isIOS, setIsIOS] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
+  // false on the server and while hydrating, true after: browser-only values are read during render below.
+  const isClient = useSyncExternalStore(subscribeNothing, () => true, () => false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   // ponytail: dismissal is permanent (no re-prompt after N days) — revisit if
   // product wants periodic re-nagging.
-  const [dismissed, setDismissed] = useState(true);
+  const [dismissedNow, setDismissedNow] = useState(false);
 
   useEffect(() => {
-    const standalone = window.matchMedia("(display-mode: standalone)").matches;
-    const state = detectInstallState(navigator.userAgent, standalone);
-    setIsIOS(state.isIOS);
-    setIsStandalone(state.isStandalone);
-    setDismissed(localStorage.getItem(DISMISSED_KEY) === "1");
-
     const onBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
       setDeferredPrompt(event as BeforeInstallPromptEvent);
@@ -38,12 +34,18 @@ export default function InstallPrompt() {
     return () => window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
   }, []);
 
+  if (!isClient) return null;
+  const { isIOS, isStandalone } = detectInstallState(
+    navigator.userAgent,
+    window.matchMedia("(display-mode: standalone)").matches,
+  );
+  const dismissed = dismissedNow || localStorage.getItem(DISMISSED_KEY) === "1";
   if (isStandalone || dismissed) return null;
   if (!isIOS && !deferredPrompt) return null;
 
   const dismiss = () => {
     localStorage.setItem(DISMISSED_KEY, "1");
-    setDismissed(true);
+    setDismissedNow(true);
   };
 
   return (
